@@ -97,7 +97,7 @@ The ATR ecosystem is a vertically integrated pipeline designed to discover, vali
 
 ## Premium Training Workshops
 
-### Track 1: "Build Your Startup with an AI Co-Founder" (4 hours)
+### Track 1: "Bring Your Idea to Life with an AI Co-Founder" (4 hours)
 **Target:** Aspiring entrepreneurs, non-technical founders
 **Content:**
 - Hour 1: Introduction to AI co-founder concept, live demo
