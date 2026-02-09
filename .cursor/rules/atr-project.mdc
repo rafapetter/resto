@@ -1,0 +1,58 @@
+---
+description: ATR Platform project rules and context
+globs: **/*
+alwaysApply: true
+---
+
+# ATR (All The Rest) — Project Rules
+
+## What This Project Is
+ATR is a cloud-based SaaS platform providing an AI co-founder named "Resto" to non-technical entrepreneurs. Resto manages the full business lifecycle through chat and voice conversation.
+
+## Knowledge Base
+Before making decisions, consult the knowledge base at `knowledge-base/`:
+- **1-index/** — Master index of all topics (read first)
+- **2-summaries/** — Topic overviews (max 2000 chars each)
+- **3-descriptions/** — Detailed specs (max 50000 chars each)
+- When you make a new architectural decision, update the relevant knowledge base files
+
+### Knowledge Base File Rules (MUST follow when editing KB files)
+- **1st Tier (Index):** Max 50 lines per file. Pattern: `<Topic Name> | <Short Description> | <Location>`
+- **2nd Tier (Summaries):** Max 2,000 characters per file. Pattern: `<Title> | <Version & Date> | <Long Summary>`
+- **3rd Tier (Descriptions):** Max 50,000 characters per file. Pattern: `<Title> | <Version & Date> | <Long Description>`
+- **If a file exceeds its limit**, split it in half into separate files with logical grouping
+- **Assets folder** for non-MD files (PDFs, images, media) — mirrors tier folder structure
+- **Always version bump** (in the header) when updating a KB file
+- Full spec: `knowledge-base/3-descriptions/product/specs/knowledge-base-system.md`
+
+## Tech Stack (Mandatory)
+- All-TypeScript — NO Python anywhere
+- Next.js 14+ (App Router)
+- CopilotKit for agent orchestration
+- tRPC for type-safe APIs
+- Tailwind CSS + shadcn/ui
+- Neon PostgreSQL (Vercel) + pgvector
+- Vercel KV (Redis)
+- Vercel Blob (file storage)
+- Clerk (auth)
+- Vercel (hosting)
+- Zod for validation
+
+## Code Quality Rules
+- Write testable code: pure functions, dependency injection, clear interfaces
+- Define types/interfaces before implementation
+- Use Zod at all API boundaries
+- No `any` types — strict TypeScript
+- Commit frequently with descriptive messages
+- Prefer editing existing files over creating new ones
+
+## Architecture Rules
+- Chat/voice-first: dashboard is secondary
+- Agent: hierarchical (Master Agent + contextual task instances)
+- Knowledge base: 3-tier, auto-maintained, size limits enforced
+- Multi-tenancy: tenant_id on every database row
+- Credentials: AES-256-GCM encrypted, never in memory beyond action scope
+- LLM routing: cheapest model that handles the task (Haiku → Sonnet → Opus)
+
+## When Uncertain
+Ask the user rather than assuming. Reference the knowledge base for documented decisions.
