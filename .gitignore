@@ -1,6 +1,39 @@
+# Dependencies
 node_modules/
+.pnpm-store/
+
+# Next.js
+.next/
+out/
+
+# Vercel
+.vercel/
+
+# Environment
 .env
 .env.local
-.next/
-.vercel/
+.env.*.local
+
+# Logs
 *.log
+npm-debug.log*
+
+# Build
+dist/
+
+# Drizzle
+drizzle/
+
+# IDE
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+.vercel
