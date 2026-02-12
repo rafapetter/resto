@@ -16,9 +16,31 @@ export async function createContext(): Promise<Context> {
 
   let tenantId: string | null = null;
   if (userId) {
-    const tenant = await db.query.tenants.findFirst({
+    let tenant = await db.query.tenants.findFirst({
       where: eq(tenants.clerkUserId, userId),
     });
+
+    // Auto-create tenant if Clerk user exists but no tenant row yet
+    // (handles cases where webhook hasn't fired or isn't configured)
+    if (!tenant) {
+      const { currentUser } = await import("@clerk/nextjs/server");
+      const user = await currentUser();
+      if (user) {
+        const [created] = await db
+          .insert(tenants)
+          .values({
+            clerkUserId: userId,
+            name: `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() || "User",
+            email: user.emailAddresses[0]?.emailAddress ?? "",
+          })
+          .onConflictDoNothing()
+          .returning();
+        tenant = created ?? await db.query.tenants.findFirst({
+          where: eq(tenants.clerkUserId, userId),
+        });
+      }
+    }
+
     tenantId = tenant?.id ?? null;
   }
 
