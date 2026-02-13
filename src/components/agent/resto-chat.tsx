@@ -9,6 +9,7 @@ import {
 import { useTRPC } from "@/trpc/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { buildSystemPrompt } from "@/lib/agent/prompts/system";
+import { AutonomyActionRenderer } from "./actions/autonomy-action-renderer";
 import "@copilotkit/react-ui/styles.css";
 
 type Props = {
@@ -107,7 +108,7 @@ function RestoChatInner({ projectId }: Props) {
     trpc.credentials.initiateOAuth.mutationOptions({})
   );
 
-  // ─── Actions ──────────────────────────────────────────────────────
+  // ─── Actions with autonomy ─────────────────────────────────────
 
   useCopilotAction({
     name: "searchKnowledgeBase",
@@ -116,18 +117,30 @@ function RestoChatInner({ projectId }: Props) {
     parameters: [
       {
         name: "query",
-        type: "string",
+        type: "string" as const,
         description: "Natural language search query",
         required: true,
       },
     ],
-    handler: async ({ query }: { query: string }) => {
-      const results = await searchKB.mutateAsync({
-        projectId,
-        query,
-      });
-      return results;
-    },
+    renderAndWaitForResponse: ({ args, status, respond }) => (
+      <AutonomyActionRenderer
+        status={status}
+        args={args as Record<string, unknown>}
+        respond={respond}
+        category="knowledge_management"
+        actionName="searchKnowledgeBase"
+        risk="low"
+        projectId={projectId}
+        description={`Search knowledge base for: "${args.query ?? ""}"`}
+        execute={async () => {
+          const results = await searchKB.mutateAsync({
+            projectId,
+            query: args.query as string,
+          });
+          return results;
+        }}
+      />
+    ),
   });
 
   useCopilotAction({
@@ -137,44 +150,48 @@ function RestoChatInner({ projectId }: Props) {
     parameters: [
       {
         name: "title",
-        type: "string",
+        type: "string" as const,
         description: "Document title",
         required: true,
       },
       {
         name: "content",
-        type: "string",
+        type: "string" as const,
         description: "Document content in markdown format",
         required: true,
       },
       {
         name: "tier",
-        type: "string",
+        type: "string" as const,
         description:
           "Document tier: 'index' for quick reference, 'summary' for overviews, 'detail' for full docs",
         required: true,
       },
     ],
-    handler: async ({
-      title,
-      content,
-      tier,
-    }: {
-      title: string;
-      content: string;
-      tier: string;
-    }) => {
-      const result = await createKB.mutateAsync({
-        projectId,
-        title,
-        content,
-        tier: tier as "index" | "summary" | "detail",
-      });
-      await queryClient.invalidateQueries({
-        queryKey: trpc.knowledgeBase.list.queryKey({ projectId }),
-      });
-      return result;
-    },
+    renderAndWaitForResponse: ({ args, status, respond }) => (
+      <AutonomyActionRenderer
+        status={status}
+        args={args as Record<string, unknown>}
+        respond={respond}
+        category="knowledge_management"
+        actionName="createKnowledgeEntry"
+        risk="low"
+        projectId={projectId}
+        description={`Create knowledge entry: "${args.title ?? ""}"`}
+        execute={async () => {
+          const result = await createKB.mutateAsync({
+            projectId,
+            title: args.title as string,
+            content: args.content as string,
+            tier: args.tier as "index" | "summary" | "detail",
+          });
+          await queryClient.invalidateQueries({
+            queryKey: trpc.knowledgeBase.list.queryKey({ projectId }),
+          });
+          return result;
+        }}
+      />
+    ),
   });
 
   useCopilotAction({
@@ -184,47 +201,51 @@ function RestoChatInner({ projectId }: Props) {
     parameters: [
       {
         name: "title",
-        type: "string",
+        type: "string" as const,
         description: "Task title",
         required: true,
       },
       {
         name: "description",
-        type: "string",
+        type: "string" as const,
         description: "Task description with details",
         required: false,
       },
       {
         name: "stage",
-        type: "string",
+        type: "string" as const,
         description:
           "Project stage: 'plan', 'build', 'launch', or 'grow'",
         required: true,
       },
     ],
-    handler: async ({
-      title,
-      description,
-      stage,
-    }: {
-      title: string;
-      description?: string;
-      stage: string;
-    }) => {
-      const result = await createTask.mutateAsync({
-        projectId,
-        title,
-        description,
-        stage: stage as "plan" | "build" | "launch" | "grow",
-      });
-      await queryClient.invalidateQueries({
-        queryKey: trpc.tasks.list.queryKey({ projectId }),
-      });
-      await queryClient.invalidateQueries({
-        queryKey: trpc.projects.getFullContext.queryKey({ projectId }),
-      });
-      return result;
-    },
+    renderAndWaitForResponse: ({ args, status, respond }) => (
+      <AutonomyActionRenderer
+        status={status}
+        args={args as Record<string, unknown>}
+        respond={respond}
+        category="knowledge_management"
+        actionName="createChecklistItem"
+        risk="low"
+        projectId={projectId}
+        description={`Add checklist item: "${args.title ?? ""}" to ${args.stage ?? ""} stage`}
+        execute={async () => {
+          const result = await createTask.mutateAsync({
+            projectId,
+            title: args.title as string,
+            description: args.description as string | undefined,
+            stage: args.stage as "plan" | "build" | "launch" | "grow",
+          });
+          await queryClient.invalidateQueries({
+            queryKey: trpc.tasks.list.queryKey({ projectId }),
+          });
+          await queryClient.invalidateQueries({
+            queryKey: trpc.projects.getFullContext.queryKey({ projectId }),
+          });
+          return result;
+        }}
+      />
+    ),
   });
 
   useCopilotAction({
@@ -234,37 +255,51 @@ function RestoChatInner({ projectId }: Props) {
     parameters: [
       {
         name: "id",
-        type: "string",
+        type: "string" as const,
         description: "The checklist item ID",
         required: true,
       },
       {
         name: "status",
-        type: "string",
+        type: "string" as const,
         description:
           "New status: 'pending', 'in_progress', 'blocked', 'completed', or 'skipped'",
         required: true,
       },
     ],
-    handler: async ({ id, status }: { id: string; status: string }) => {
-      const result = await updateTaskStatus.mutateAsync({
-        id,
-        status: status as
-          | "pending"
-          | "in_progress"
-          | "blocked"
-          | "completed"
-          | "skipped",
-      });
-      await queryClient.invalidateQueries({
-        queryKey: trpc.tasks.list.queryKey({ projectId }),
-      });
-      await queryClient.invalidateQueries({
-        queryKey: trpc.projects.getFullContext.queryKey({ projectId }),
-      });
-      return result;
-    },
+    renderAndWaitForResponse: ({ args, status, respond }) => (
+      <AutonomyActionRenderer
+        status={status}
+        args={args as Record<string, unknown>}
+        respond={respond}
+        category="knowledge_management"
+        actionName="updateChecklistItem"
+        risk="low"
+        projectId={projectId}
+        description={`Update checklist item status to: ${args.status ?? ""}`}
+        execute={async () => {
+          const result = await updateTaskStatus.mutateAsync({
+            id: args.id as string,
+            status: args.status as
+              | "pending"
+              | "in_progress"
+              | "blocked"
+              | "completed"
+              | "skipped",
+          });
+          await queryClient.invalidateQueries({
+            queryKey: trpc.tasks.list.queryKey({ projectId }),
+          });
+          await queryClient.invalidateQueries({
+            queryKey: trpc.projects.getFullContext.queryKey({ projectId }),
+          });
+          return result;
+        }}
+      />
+    ),
   });
+
+  // ─── Read-only actions (no autonomy needed) ───────────────────────
 
   useCopilotAction({
     name: "getProjectChecklist",
@@ -299,6 +334,8 @@ function RestoChatInner({ projectId }: Props) {
     },
   });
 
+  // ─── Integration setup (with autonomy) ────────────────────────────
+
   useCopilotAction({
     name: "getIntegrationSetupUrl",
     description:
@@ -306,54 +343,66 @@ function RestoChatInner({ projectId }: Props) {
     parameters: [
       {
         name: "provider",
-        type: "string",
+        type: "string" as const,
         description: "The provider ID: github, vercel, stripe, or webhook",
         required: true,
       },
     ],
-    handler: async ({ provider }: { provider: string }) => {
-      const providers = await queryClient.fetchQuery(
-        trpc.credentials.providers.queryOptions({ projectId })
-      );
-      const p = providers.find((pr) => pr.id === provider);
-      if (!p) return { error: "Unknown provider" };
+    renderAndWaitForResponse: ({ args, status, respond }) => (
+      <AutonomyActionRenderer
+        status={status}
+        args={args as Record<string, unknown>}
+        respond={respond}
+        category="integrations"
+        actionName="getIntegrationSetupUrl"
+        risk="medium"
+        projectId={projectId}
+        description={`Get setup URL for ${args.provider ?? ""} integration`}
+        execute={async () => {
+          const providers = await queryClient.fetchQuery(
+            trpc.credentials.providers.queryOptions({ projectId })
+          );
+          const p = providers.find((pr) => pr.id === args.provider);
+          if (!p) return { error: "Unknown provider" };
 
-      if (p.connected) {
-        return {
-          status: "already_connected",
-          accountLabel: p.accountLabel,
-        };
-      }
+          if (p.connected) {
+            return {
+              status: "already_connected",
+              accountLabel: p.accountLabel,
+            };
+          }
 
-      if (p.authType === "oauth2") {
-        if (!p.available) {
+          if (p.authType === "oauth2") {
+            if (!p.available) {
+              return {
+                error: `${p.name} OAuth is not configured yet. The admin needs to set the environment variables.`,
+              };
+            }
+            const result = await initiateOAuth.mutateAsync({
+              projectId,
+              provider: args.provider as string,
+            });
+            return {
+              authType: "oauth2",
+              setupUrl: result.authorizeUrl,
+              instructions: `To connect ${p.name}, open this URL: ${result.authorizeUrl}`,
+            };
+          }
+
+          if (p.authType === "api_key") {
+            return {
+              authType: "api_key",
+              instructions: `Go to the Integrations page to enter your ${p.name} API key. Navigate to the integrations tab in your project settings.`,
+            };
+          }
+
           return {
-            error: `${p.name} OAuth is not configured yet. The admin needs to set the environment variables.`,
+            authType: "webhook",
+            instructions: `Go to the Integrations page to configure your webhook URL. Navigate to the integrations tab in your project settings.`,
           };
-        }
-        const result = await initiateOAuth.mutateAsync({
-          projectId,
-          provider,
-        });
-        return {
-          authType: "oauth2",
-          setupUrl: result.authorizeUrl,
-          instructions: `To connect ${p.name}, open this URL: ${result.authorizeUrl}`,
-        };
-      }
-
-      if (p.authType === "api_key") {
-        return {
-          authType: "api_key",
-          instructions: `Go to the Integrations page to enter your ${p.name} API key. Navigate to the integrations tab in your project settings.`,
-        };
-      }
-
-      return {
-        authType: "webhook",
-        instructions: `Go to the Integrations page to configure your webhook URL. Navigate to the integrations tab in your project settings.`,
-      };
-    },
+        }}
+      />
+    ),
   });
 
   // ─── Greeting ─────────────────────────────────────────────────────

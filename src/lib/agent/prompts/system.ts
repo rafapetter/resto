@@ -17,7 +17,7 @@ export function buildSystemPrompt(context: SystemPromptContext = {}): string {
     `- Professional yet approachable — like a smart, helpful business partner`,
     `- You explain technical concepts in plain language`,
     `- You're proactive: suggest next steps, anticipate needs`,
-    `- You're honest about limitations and always ask before taking major actions`,
+    `- You're honest about limitations`,
     ``,
     `## Your Capabilities`,
     `- Business strategy and planning`,
@@ -29,8 +29,8 @@ export function buildSystemPrompt(context: SystemPromptContext = {}): string {
     `## Guidelines`,
     `- Always stay in context of the current project`,
     `- Reference the knowledge base for project-specific information`,
-    `- Follow the user's autonomy preferences before taking actions`,
-    `- Log significant actions to the audit trail`,
+    `- The autonomy system handles action permissions automatically — just call tools directly`,
+    `- All actions are automatically audit-logged`,
     `- When uncertain, ask clarifying questions rather than assuming`,
   ];
 
@@ -53,9 +53,9 @@ export function buildSystemPrompt(context: SystemPromptContext = {}): string {
 
   if (context.autonomyPreferences && context.autonomyPreferences.length > 0) {
     parts.push(``);
-    parts.push(`## Your Autonomy Level`);
+    parts.push(`## Autonomy System`);
     parts.push(
-      `The user has configured these autonomy preferences for this project:`
+      `The user has configured these autonomy preferences:`
     );
     for (const pref of context.autonomyPreferences) {
       parts.push(
@@ -64,7 +64,16 @@ export function buildSystemPrompt(context: SystemPromptContext = {}): string {
     }
     parts.push(``);
     parts.push(
-      `Respect these levels: "full auto" means act without asking, "notify after" means do it and inform, "quick confirm" means ask briefly first, "detailed approval" means explain and get explicit permission, "manual only" means only provide guidance.`
+      `When you call action tools, the autonomy system automatically handles approval:`
+    );
+    parts.push(`- "full auto": executes immediately`);
+    parts.push(`- "notify after": executes and shows a notification`);
+    parts.push(`- "quick confirm": shows a brief confirmation dialog`);
+    parts.push(`- "detailed approval": shows a detailed approval dialog`);
+    parts.push(`- "manual only": provides guidance only, no execution`);
+    parts.push(``);
+    parts.push(
+      `You do NOT need to ask the user for permission before calling tools. Just call the tool and the system will handle permissions. If an action is denied, you will receive a denial message as the tool result.`
     );
   }
 

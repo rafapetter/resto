@@ -1,5 +1,5 @@
 import { z } from "zod/v4";
-import { eq, and } from "drizzle-orm";
+import { eq, and, isNull } from "drizzle-orm";
 import { createRouter, tenantProcedure } from "../init";
 import { autonomySettings } from "@/server/db/schema";
 
@@ -10,6 +10,8 @@ export const settingsRouter = createRouter({
       const conditions = [eq(autonomySettings.tenantId, ctx.tenantId)];
       if (input.projectId) {
         conditions.push(eq(autonomySettings.projectId, input.projectId));
+      } else {
+        conditions.push(isNull(autonomySettings.projectId));
       }
 
       return ctx.db.query.autonomySettings.findMany({
@@ -46,6 +48,8 @@ export const settingsRouter = createRouter({
       ];
       if (input.projectId) {
         conditions.push(eq(autonomySettings.projectId, input.projectId));
+      } else {
+        conditions.push(isNull(autonomySettings.projectId));
       }
 
       const existing = await ctx.db.query.autonomySettings.findFirst({

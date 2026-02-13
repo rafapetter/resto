@@ -1,6 +1,6 @@
 import { db } from "@/server/db";
 import { autonomySettings, auditLog } from "@/server/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, isNull } from "drizzle-orm";
 import {
   DEFAULT_AUTONOMY,
   RISK_TO_MIN_LEVEL,
@@ -44,11 +44,12 @@ export class AutonomyChecker {
       if (projectSetting) return projectSetting.level as ApprovalLevel;
     }
 
-    // Fall back to tenant-level settings
+    // Fall back to tenant-level settings (projectId IS NULL)
     const tenantSetting = await db.query.autonomySettings.findFirst({
       where: and(
         eq(autonomySettings.tenantId, this.tenantId),
-        eq(autonomySettings.category, category)
+        eq(autonomySettings.category, category),
+        isNull(autonomySettings.projectId)
       ),
     });
     if (tenantSetting) return tenantSetting.level as ApprovalLevel;
