@@ -25,6 +25,7 @@ export const integrationCredentials = pgTable("integration_credentials", {
     onDelete: "cascade",
   }),
   provider: text("provider").notNull(),
+  accountLabel: text("account_label"),
   authType: authType("auth_type").notNull(),
   encryptedData: bytea("encrypted_data").notNull(),
   iv: bytea("iv").notNull(),

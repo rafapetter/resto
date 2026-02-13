@@ -30,6 +30,15 @@ const envSchema = z.object({
   // Encryption
   ENCRYPTION_MASTER_KEY: z.string().min(32).optional(),
 
+  // Integration OAuth providers
+  GITHUB_CLIENT_ID: z.string().min(1).optional(),
+  GITHUB_CLIENT_SECRET: z.string().min(1).optional(),
+  VERCEL_CLIENT_ID: z.string().min(1).optional(),
+  VERCEL_CLIENT_SECRET: z.string().min(1).optional(),
+
+  // Cron
+  CRON_SECRET: z.string().min(16).optional(),
+
   // App
   NEXT_PUBLIC_APP_URL: z.string().url().default("http://localhost:3000"),
 });
@@ -37,7 +46,12 @@ const envSchema = z.object({
 export type Env = z.infer<typeof envSchema>;
 
 function validateEnv(): Env {
-  const parsed = envSchema.safeParse(process.env);
+  // Convert empty strings to undefined so optional() works with .env files
+  const cleaned: Record<string, string | undefined> = {};
+  for (const [key, value] of Object.entries(process.env)) {
+    cleaned[key] = value === "" ? undefined : value;
+  }
+  const parsed = envSchema.safeParse(cleaned);
 
   if (!parsed.success) {
     console.error("Invalid environment variables:", parsed.error.format());

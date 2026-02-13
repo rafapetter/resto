@@ -7,6 +7,7 @@ export const ROUTES = {
   signIn: "/sign-in",
   signUp: "/sign-up",
   projects: "/projects",
+  newProject: "/projects/new",
   settings: "/settings",
   project: (id: string) => `/projects/${id}`,
   projectChat: (id: string) => `/projects/${id}/chat`,

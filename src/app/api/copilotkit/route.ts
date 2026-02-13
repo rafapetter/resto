@@ -12,7 +12,9 @@ const serviceAdapter = new AnthropicAdapter({
   model: "claude-sonnet-4-20250514",
 });
 
-const runtime = new CopilotRuntime();
+const runtime = new CopilotRuntime({
+  delegateAgentProcessingToServiceAdapter: true,
+});
 
 export const POST = async (req: Request) => {
   const { handleRequest } = copilotRuntimeNextJSAppRouterEndpoint({

@@ -2,6 +2,7 @@ import { z } from "zod/v4";
 import { eq, and } from "drizzle-orm";
 import { createRouter, tenantProcedure } from "../init";
 import { knowledgeFiles } from "@/server/db/schema";
+import { KnowledgeBaseService } from "@/lib/knowledge/service";
 
 export const knowledgeBaseRouter = createRouter({
   list: tenantProcedure
@@ -40,5 +41,43 @@ export const knowledgeBaseRouter = createRouter({
           )
         );
       return { success: true };
+    }),
+
+  search: tenantProcedure
+    .input(
+      z.object({
+        projectId: z.string().uuid(),
+        query: z.string().min(1),
+        limit: z.number().int().min(1).max(20).optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const kb = new KnowledgeBaseService();
+      return kb.search(
+        input.projectId,
+        ctx.tenantId,
+        input.query,
+        input.limit ?? 5,
+      );
+    }),
+
+  create: tenantProcedure
+    .input(
+      z.object({
+        projectId: z.string().uuid(),
+        title: z.string().min(1),
+        content: z.string().min(1),
+        tier: z.enum(["index", "summary", "detail"]),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const kb = new KnowledgeBaseService();
+      return kb.create({
+        tenantId: ctx.tenantId,
+        projectId: input.projectId,
+        tier: input.tier,
+        title: input.title,
+        content: input.content,
+      });
     }),
 });
