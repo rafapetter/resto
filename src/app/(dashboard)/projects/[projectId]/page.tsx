@@ -1,6 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
+import { notFound } from "next/navigation";
 import Link from "next/link";
 import { useTRPC } from "@/trpc/client";
 import { useQuery } from "@tanstack/react-query";
@@ -12,6 +13,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { MessageSquare, CheckSquare, BookOpen, Plug } from "lucide-react";
 
 const sections = [
@@ -44,12 +46,36 @@ const sections = [
 export default function ProjectPage() {
   const params = useParams<{ projectId: string }>();
   const trpc = useTRPC();
-  const { data: project } = useQuery(
+  const { data: project, isLoading } = useQuery(
     trpc.projects.getById.queryOptions({ id: params.projectId })
   );
 
+  if (isLoading) {
+    return (
+      <div>
+        <div className="mb-6">
+          <div className="flex items-center gap-3">
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="h-6 w-20 rounded-full" />
+          </div>
+          <Skeleton className="mt-2 h-4 w-72" />
+        </div>
+        <div className="grid gap-4 md:grid-cols-2">
+          {[1, 2, 3, 4].map((i) => (
+            <Card key={i}>
+              <CardHeader>
+                <Skeleton className="h-5 w-32" />
+                <Skeleton className="mt-1 h-4 w-48" />
+              </CardHeader>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   if (!project) {
-    return <div className="text-muted-foreground">Loading project...</div>;
+    notFound();
   }
 
   return (
