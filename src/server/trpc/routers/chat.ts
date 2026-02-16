@@ -1,7 +1,28 @@
 import { z } from "zod/v4";
 import { eq, and } from "drizzle-orm";
 import { createRouter, tenantProcedure } from "../init";
-import { conversations, type Message } from "@/server/db/schema";
+import { conversations } from "@/server/db/schema";
+
+const messageSchema = z.object({
+  id: z.string(),
+  role: z.enum(["user", "assistant", "system", "tool", "developer"]),
+  content: z.string().optional(),
+  timestamp: z.string(),
+  toolCalls: z
+    .array(
+      z.object({
+        id: z.string(),
+        type: z.literal("function"),
+        function: z.object({ name: z.string(), arguments: z.string() }),
+      })
+    )
+    .optional(),
+  toolCallId: z.string().optional(),
+  toolName: z.string().optional(),
+  error: z.string().optional(),
+  name: z.string().optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
+});
 
 export const chatRouter = createRouter({
   getConversation: tenantProcedure
@@ -17,46 +38,31 @@ export const chatRouter = createRouter({
       return conversation;
     }),
 
-  saveMessages: tenantProcedure
+  saveConversation: tenantProcedure
     .input(
       z.object({
         projectId: z.string().uuid(),
-        conversationId: z.string().uuid().optional(),
-        messages: z.array(
-          z.object({
-            role: z.enum(["user", "assistant", "system"]),
-            content: z.string(),
-            timestamp: z.string(),
-            metadata: z.record(z.string(), z.unknown()).optional(),
-          })
-        ),
+        messages: z.array(messageSchema),
       })
     )
     .mutation(async ({ ctx, input }) => {
-      if (input.conversationId) {
-        const existing = await ctx.db.query.conversations.findFirst({
-          where: and(
-            eq(conversations.id, input.conversationId),
-            eq(conversations.tenantId, ctx.tenantId)
-          ),
-        });
+      const existing = await ctx.db.query.conversations.findFirst({
+        where: and(
+          eq(conversations.tenantId, ctx.tenantId),
+          eq(conversations.projectId, input.projectId)
+        ),
+      });
 
-        if (existing) {
-          const [updated] = await ctx.db
-            .update(conversations)
-            .set({
-              messages: [
-                ...(existing.messages as Message[]),
-                ...input.messages,
-              ],
-            })
-            .where(eq(conversations.id, input.conversationId))
-            .returning();
-          return updated;
-        }
+      if (existing) {
+        const [updated] = await ctx.db
+          .update(conversations)
+          .set({ messages: input.messages })
+          .where(eq(conversations.id, existing.id))
+          .returning();
+        return updated;
       }
 
-      const [conversation] = await ctx.db
+      const [created] = await ctx.db
         .insert(conversations)
         .values({
           tenantId: ctx.tenantId,
@@ -64,6 +70,6 @@ export const chatRouter = createRouter({
           messages: input.messages,
         })
         .returning();
-      return conversation;
+      return created;
     }),
 });

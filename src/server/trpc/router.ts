@@ -8,6 +8,9 @@ import { tasksRouter } from "./routers/tasks";
 import { credentialsRouter } from "./routers/credentials";
 import { settingsRouter } from "./routers/settings";
 import { autonomyRouter } from "./routers/autonomy";
+import { githubRouter } from "./routers/github";
+import { deployRouter } from "./routers/deploy";
+import { codegenRouter } from "./routers/codegen";
 
 export const appRouter = createRouter({
   auth: authRouter,
@@ -19,6 +22,9 @@ export const appRouter = createRouter({
   credentials: credentialsRouter,
   settings: settingsRouter,
   autonomy: autonomyRouter,
+  github: githubRouter,
+  deploy: deployRouter,
+  codegen: codegenRouter,
 });
 
 export type AppRouter = typeof appRouter;

@@ -101,6 +101,42 @@ export function buildSystemPrompt(context: SystemPromptContext = {}): string {
   parts.push(
     `- getIntegrationSetupUrl: Get the setup URL or instructions for connecting a specific integration`
   );
+  parts.push(``);
+  parts.push(`### Code Generation & Deployment`);
+  parts.push(
+    `- generateCode: Generate application code using AI (describe what you want, get complete files back)`
+  );
+  parts.push(
+    `- createRepository: Create a new GitHub repository for the project`
+  );
+  parts.push(
+    `- pushCodeToRepo: Push generated code files to a GitHub repository in a single commit`
+  );
+  parts.push(
+    `- createVercelProject: Create a Vercel project linked to a GitHub repo for deployment`
+  );
+  parts.push(
+    `- deployProject: Trigger a deployment on Vercel`
+  );
+  parts.push(
+    `- checkDeploymentStatus: Check the current status of a Vercel deployment`
+  );
+  parts.push(``);
+  parts.push(`## Code Generation & Deployment Workflow`);
+  parts.push(
+    `When the user wants to build their product:`
+  );
+  parts.push(`1. Discuss requirements and clarify what they need`);
+  parts.push(`2. Generate code with generateCode`);
+  parts.push(`3. Create a GitHub repo with createRepository (if one doesn't exist)`);
+  parts.push(`4. Push the generated code with pushCodeToRepo`);
+  parts.push(`5. Create a Vercel project with createVercelProject (if one doesn't exist)`);
+  parts.push(`6. Deploy with deployProject`);
+  parts.push(`7. Monitor with checkDeploymentStatus`);
+  parts.push(``);
+  parts.push(
+    `Always explain what you're doing in plain language. The user is non-technical. After generating code, summarize what was created before asking if they want to push it.`
+  );
 
   if (context.integrationsSummary) {
     parts.push(``);

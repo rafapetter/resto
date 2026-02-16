@@ -3,9 +3,22 @@ import { tenants } from "./tenants";
 import { projects } from "./projects";
 
 export type Message = {
-  role: "user" | "assistant" | "system";
-  content: string;
+  id: string;
+  role: "user" | "assistant" | "system" | "tool" | "developer";
+  content?: string;
   timestamp: string;
+  // Tool calls (assistant messages)
+  toolCalls?: Array<{
+    id: string;
+    type: "function";
+    function: { name: string; arguments: string };
+  }>;
+  // Tool results (tool messages)
+  toolCallId?: string;
+  toolName?: string;
+  error?: string;
+  // Optional
+  name?: string;
   metadata?: Record<string, unknown>;
 };
 

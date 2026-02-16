@@ -10,6 +10,7 @@ import { useTRPC } from "@/trpc/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { buildSystemPrompt } from "@/lib/agent/prompts/system";
 import { AutonomyActionRenderer } from "./actions/autonomy-action-renderer";
+import { useChatPersistence } from "@/hooks/use-chat-persistence";
 import "@copilotkit/react-ui/styles.css";
 
 type Props = {
@@ -18,7 +19,7 @@ type Props = {
 
 export function RestoChat({ projectId }: Props) {
   return (
-    <CopilotKit runtimeUrl="/api/copilotkit">
+    <CopilotKit runtimeUrl="/api/copilotkit" properties={{ projectId }}>
       <div className="flex h-[calc(100vh-8rem)] flex-col">
         <RestoChatInner projectId={projectId} />
       </div>
@@ -36,11 +37,11 @@ function RestoChatInner({ projectId }: Props) {
     trpc.projects.getFullContext.queryOptions({ projectId })
   );
 
-  const { data: conversation } = useQuery(
-    trpc.chat.getConversation.queryOptions({ projectId })
-  );
+  // ─── Chat persistence (auto-save/restore) ──────────────────────────
 
-  const isFirstVisit = context?.project && !conversation;
+  const { isLoading: isRestoring, messageCount } = useChatPersistence(projectId);
+
+  const isFirstVisit = context?.project && messageCount === 0;
 
   // ─── Build system prompt ──────────────────────────────────────────
 
@@ -106,6 +107,21 @@ function RestoChatInner({ projectId }: Props) {
   );
   const initiateOAuth = useMutation(
     trpc.credentials.initiateOAuth.mutationOptions({})
+  );
+  const generateCodeMut = useMutation(
+    trpc.codegen.generate.mutationOptions({})
+  );
+  const createRepoMut = useMutation(
+    trpc.github.createRepo.mutationOptions({})
+  );
+  const pushCodeMut = useMutation(
+    trpc.github.pushCode.mutationOptions({})
+  );
+  const createVercelProjectMut = useMutation(
+    trpc.deploy.createProject.mutationOptions({})
+  );
+  const triggerDeployMut = useMutation(
+    trpc.deploy.triggerDeployment.mutationOptions({})
   );
 
   // ─── Actions with autonomy ─────────────────────────────────────
@@ -405,6 +421,271 @@ function RestoChatInner({ projectId }: Props) {
     ),
   });
 
+  // ─── Code generation & deployment (with autonomy) ─────────────────
+
+  useCopilotAction({
+    name: "generateCode",
+    description:
+      "Generate application code using AI. Describe what you want built and the agent will create all the files.",
+    parameters: [
+      {
+        name: "description",
+        type: "string" as const,
+        description:
+          "Detailed description of the application or feature to generate",
+        required: true,
+      },
+      {
+        name: "framework",
+        type: "string" as const,
+        description:
+          "Framework to use: 'nextjs' (default), 'react', 'express', etc.",
+        required: false,
+      },
+    ],
+    renderAndWaitForResponse: ({ args, status, respond }) => (
+      <AutonomyActionRenderer
+        status={status}
+        args={args as Record<string, unknown>}
+        respond={respond}
+        category="code_generation"
+        actionName="generateCode"
+        risk="medium"
+        projectId={projectId}
+        description={`Generate code: "${(args.description as string | undefined)?.slice(0, 80) ?? ""}"`}
+        execute={async () => {
+          const result = await generateCodeMut.mutateAsync({
+            projectId,
+            description: args.description as string,
+            framework: (args.framework as string | undefined) ?? "nextjs",
+          });
+          return result;
+        }}
+      />
+    ),
+  });
+
+  useCopilotAction({
+    name: "createRepository",
+    description:
+      "Create a new GitHub repository for the project's code.",
+    parameters: [
+      {
+        name: "name",
+        type: "string" as const,
+        description: "Repository name (lowercase, no spaces)",
+        required: true,
+      },
+      {
+        name: "description",
+        type: "string" as const,
+        description: "Repository description",
+        required: false,
+      },
+      {
+        name: "isPrivate",
+        type: "boolean" as const,
+        description: "Whether the repo should be private (default: true)",
+        required: false,
+      },
+    ],
+    renderAndWaitForResponse: ({ args, status, respond }) => (
+      <AutonomyActionRenderer
+        status={status}
+        args={args as Record<string, unknown>}
+        respond={respond}
+        category="code_generation"
+        actionName="createRepository"
+        risk="medium"
+        projectId={projectId}
+        description={`Create GitHub repo: "${args.name ?? ""}"`}
+        execute={async () => {
+          const repo = await createRepoMut.mutateAsync({
+            projectId,
+            name: args.name as string,
+            description: args.description as string | undefined,
+            isPrivate: (args.isPrivate as boolean | undefined) ?? true,
+          });
+          return repo;
+        }}
+      />
+    ),
+  });
+
+  useCopilotAction({
+    name: "pushCodeToRepo",
+    description:
+      "Push generated code files to a GitHub repository in a single commit.",
+    parameters: [
+      {
+        name: "owner",
+        type: "string" as const,
+        description: "GitHub username or organization",
+        required: true,
+      },
+      {
+        name: "repo",
+        type: "string" as const,
+        description: "Repository name",
+        required: true,
+      },
+      {
+        name: "commitMessage",
+        type: "string" as const,
+        description: "Commit message describing the changes",
+        required: true,
+      },
+      {
+        name: "files",
+        type: "object[]" as const,
+        description: "Array of files to push, each with path and content",
+        required: true,
+      },
+      {
+        name: "branch",
+        type: "string" as const,
+        description: "Branch to push to (default: main)",
+        required: false,
+      },
+    ],
+    renderAndWaitForResponse: ({ args, status, respond }) => (
+      <AutonomyActionRenderer
+        status={status}
+        args={args as Record<string, unknown>}
+        respond={respond}
+        category="code_generation"
+        actionName="pushCodeToRepo"
+        risk="high"
+        projectId={projectId}
+        description={`Push code to ${args.owner ?? ""}/${args.repo ?? ""}`}
+        execute={async () => {
+          const result = await pushCodeMut.mutateAsync({
+            projectId,
+            owner: args.owner as string,
+            repo: args.repo as string,
+            branch: (args.branch as string | undefined) ?? "main",
+            commitMessage: args.commitMessage as string,
+            files: args.files as Array<{ path: string; content: string }>,
+          });
+          return result;
+        }}
+      />
+    ),
+  });
+
+  useCopilotAction({
+    name: "createVercelProject",
+    description:
+      "Create a Vercel project linked to a GitHub repository for deployment.",
+    parameters: [
+      {
+        name: "name",
+        type: "string" as const,
+        description: "Vercel project name",
+        required: true,
+      },
+      {
+        name: "githubRepo",
+        type: "string" as const,
+        description: "GitHub repo in 'owner/repo' format",
+        required: true,
+      },
+      {
+        name: "framework",
+        type: "string" as const,
+        description: "Framework: 'nextjs', 'vite', 'remix', etc. (default: nextjs)",
+        required: false,
+      },
+    ],
+    renderAndWaitForResponse: ({ args, status, respond }) => (
+      <AutonomyActionRenderer
+        status={status}
+        args={args as Record<string, unknown>}
+        respond={respond}
+        category="deployment"
+        actionName="createVercelProject"
+        risk="high"
+        projectId={projectId}
+        description={`Create Vercel project: "${args.name ?? ""}"`}
+        execute={async () => {
+          const project = await createVercelProjectMut.mutateAsync({
+            projectId,
+            name: args.name as string,
+            githubRepo: args.githubRepo as string,
+            framework: (args.framework as string | undefined) ?? "nextjs",
+          });
+          return project;
+        }}
+      />
+    ),
+  });
+
+  useCopilotAction({
+    name: "deployProject",
+    description:
+      "Trigger a deployment on Vercel for the project.",
+    parameters: [
+      {
+        name: "vercelProjectName",
+        type: "string" as const,
+        description: "The Vercel project name to deploy",
+        required: true,
+      },
+      {
+        name: "target",
+        type: "string" as const,
+        description: "Deploy target: 'production' or 'preview' (default: production)",
+        required: false,
+      },
+    ],
+    renderAndWaitForResponse: ({ args, status, respond }) => (
+      <AutonomyActionRenderer
+        status={status}
+        args={args as Record<string, unknown>}
+        respond={respond}
+        category="deployment"
+        actionName="deployProject"
+        risk="high"
+        projectId={projectId}
+        description={`Deploy ${args.vercelProjectName ?? ""} to ${(args.target as string | undefined) ?? "production"}`}
+        execute={async () => {
+          const deployment = await triggerDeployMut.mutateAsync({
+            projectId,
+            vercelProjectName: args.vercelProjectName as string,
+            target:
+              ((args.target as string | undefined) ?? "production") as
+                | "production"
+                | "preview",
+          });
+          return deployment;
+        }}
+      />
+    ),
+  });
+
+  useCopilotAction({
+    name: "checkDeploymentStatus",
+    description:
+      "Check the status of a Vercel deployment.",
+    parameters: [
+      {
+        name: "deploymentId",
+        type: "string" as const,
+        description: "The Vercel deployment ID to check",
+        required: true,
+      },
+    ],
+    handler: async (args) => {
+      const status = await queryClient.fetchQuery(
+        trpc.deploy.getDeploymentStatus.queryOptions({
+          projectId,
+          deploymentId: args.deploymentId as string,
+        })
+      );
+      return status;
+    },
+  });
+
   // ─── Greeting ─────────────────────────────────────────────────────
 
   const projectName = context?.project?.name;
@@ -414,6 +695,14 @@ function RestoChatInner({ projectId }: Props) {
       : "Hi! I'm Resto, your AI co-founder. How can I help with your project today?";
 
   // ─── Render ───────────────────────────────────────────────────────
+
+  if (isRestoring || !context) {
+    return (
+      <div className="flex flex-1 items-center justify-center text-muted-foreground">
+        Loading conversation...
+      </div>
+    );
+  }
 
   return (
     <CopilotChat
