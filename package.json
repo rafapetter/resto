@@ -17,7 +17,11 @@
     "db:seed": "tsx src/server/db/seed.ts",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "dotenv -e .env.e2e -- playwright test",
+    "test:e2e:ui": "dotenv -e .env.e2e -- playwright test --ui",
+    "test:e2e:headed": "dotenv -e .env.e2e -- playwright test --headed",
+    "test:e2e:report": "playwright show-report"
   },
   "keywords": [],
   "author": "",
@@ -62,13 +66,18 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@clerk/testing": "^1.13.36",
     "@eslint/eslintrc": "^3.3.3",
+    "@playwright/test": "^1.58.2",
     "@tailwindcss/postcss": "^4.1.18",
+    "@types/pg": "^8.16.0",
     "@vitest/coverage-v8": "^4.0.18",
     "autoprefixer": "^10.4.24",
+    "dotenv-cli": "^11.0.0",
     "drizzle-kit": "^0.31.9",
     "eslint": "^9.39.2",
     "eslint-config-next": "^16.1.6",
+    "pg": "^8.18.0",
     "postcss": "^8.5.6",
     "prettier": "^3.8.1",
     "prettier-plugin-tailwindcss": "^0.7.2",

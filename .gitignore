@@ -37,3 +37,9 @@ Thumbs.db
 *.tsbuildinfo
 next-env.d.ts
 .vercel
+
+# Playwright E2E
+playwright-report/
+test-results/
+e2e/.clerk/
+.env.e2e
