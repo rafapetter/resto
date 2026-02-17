@@ -39,6 +39,11 @@ const envSchema = z.object({
   // Cron
   CRON_SECRET: z.string().min(16).optional(),
 
+  // Voice TTS — optional, defaults to "nova" in the TTS route
+  OPENAI_TTS_VOICE: z
+    .enum(["alloy", "echo", "fable", "onyx", "nova", "shimmer"])
+    .optional(),
+
   // App
   NEXT_PUBLIC_APP_URL: z.string().url().default("http://localhost:3000"),
 });

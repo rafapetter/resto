@@ -14,6 +14,7 @@ const isPublicRoute = createRouteMatcher([
 const isRateLimitedRoute = createRouteMatcher([
   "/api/copilotkit(.*)",
   "/api/trpc(.*)",
+  "/api/voice(.*)",
 ]);
 
 const clerk = clerkMiddleware(async (auth, request) => {

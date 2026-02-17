@@ -1,6 +1,6 @@
 "use client";
 
-import { CopilotKit } from "@copilotkit/react-core";
+import { CopilotKit, useCopilotChatInternal } from "@copilotkit/react-core";
 import { CopilotChat } from "@copilotkit/react-ui";
 import {
   useCopilotReadable,
@@ -11,6 +11,10 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { buildSystemPrompt } from "@/lib/agent/prompts/system";
 import { AutonomyActionRenderer } from "./actions/autonomy-action-renderer";
 import { useChatPersistence } from "@/hooks/use-chat-persistence";
+import { useVoiceInput } from "@/hooks/use-voice-input";
+import { useVoiceOutput } from "@/hooks/use-voice-output";
+import { VoiceButton } from "./voice-button";
+import { useState, useEffect, useRef, useCallback } from "react";
 import "@copilotkit/react-ui/styles.css";
 
 type Props = {
@@ -42,6 +46,40 @@ function RestoChatInner({ projectId }: Props) {
   const { isLoading: isRestoring, messageCount } = useChatPersistence(projectId);
 
   const isFirstVisit = context?.project && messageCount === 0;
+
+  // ─── Voice interface ──────────────────────────────────────────────
+
+  const { messages, sendMessage } = useCopilotChatInternal();
+  const [voiceMode, setVoiceMode] = useState(false);
+  const { speak, stop: stopSpeaking, isSpeaking } = useVoiceOutput();
+  const prevMessageCountRef = useRef(0);
+
+  // Auto-play TTS when a new assistant message arrives and voice mode is on
+  useEffect(() => {
+    if (!voiceMode || messages.length <= prevMessageCountRef.current) {
+      prevMessageCountRef.current = messages.length;
+      return;
+    }
+    prevMessageCountRef.current = messages.length;
+    const last = messages[messages.length - 1];
+    // AG-UI messages: plain objects { id, role, content }
+    if (last?.role === "assistant" && typeof last.content === "string") {
+      void speak(last.content);
+    }
+  }, [messages, voiceMode, speak]);
+
+  const sendVoiceMessage = useCallback(
+    (transcript: string) => {
+      void sendMessage({
+        id: crypto.randomUUID(),
+        role: "user",
+        content: transcript,
+      });
+    },
+    [sendMessage]
+  );
+
+  const voiceInput = useVoiceInput(sendVoiceMessage);
 
   // ─── Build system prompt ──────────────────────────────────────────
 
@@ -705,14 +743,29 @@ function RestoChatInner({ projectId }: Props) {
   }
 
   return (
-    <CopilotChat
-      className="flex-1"
-      instructions={systemPrompt}
-      labels={{
-        title: "Resto",
-        initial: greeting,
-        placeholder: "Ask me anything about your project...",
-      }}
-    />
+    <div className="flex h-full flex-col">
+      <CopilotChat
+        className="flex-1"
+        instructions={systemPrompt}
+        labels={{
+          title: "Resto",
+          initial: greeting,
+          placeholder: "Ask me anything about your project...",
+        }}
+      />
+      <VoiceButton
+        voiceMode={voiceMode}
+        onToggleVoiceMode={() => {
+          setVoiceMode((v) => !v);
+          stopSpeaking();
+        }}
+        recordingState={voiceInput.state}
+        onStartRecording={voiceInput.start}
+        onStopRecording={voiceInput.stop}
+        isSpeaking={isSpeaking}
+        onStopSpeaking={stopSpeaking}
+        isSupported={voiceInput.isSupported}
+      />
+    </div>
   );
 }
