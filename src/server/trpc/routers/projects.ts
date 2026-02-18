@@ -1,5 +1,6 @@
 import { z } from "zod/v4";
-import { eq, and, asc } from "drizzle-orm";
+import { eq, and, asc, sql } from "drizzle-orm";
+import { TRPCError } from "@trpc/server";
 import { createRouter, tenantProcedure } from "../init";
 import {
   projects,
@@ -10,6 +11,7 @@ import {
 import { KnowledgeBaseService } from "@/lib/knowledge/service";
 import { bootstrapProject } from "@/lib/agent/bootstrap/project-bootstrap";
 import type { AutonomyCategory, ApprovalLevel } from "@/lib/autonomy/types";
+import { getTenantPlan } from "@/lib/billing/gating";
 
 // ─── Zod schema for MultiSelectValue ────────────────────────────────
 
@@ -48,6 +50,21 @@ export const projectsRouter = createRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      // Check plan project limit
+      const { plan } = await getTenantPlan(ctx.tenantId);
+      if (plan.limits.projects !== -1) {
+        const [row] = await ctx.db
+          .select({ count: sql<number>`COUNT(*)` })
+          .from(projects)
+          .where(eq(projects.tenantId, ctx.tenantId));
+        if (Number(row?.count ?? 0) >= plan.limits.projects) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: `Your ${plan.name} plan allows ${plan.limits.projects} project. Upgrade at /billing to create more.`,
+          });
+        }
+      }
+
       const [project] = await ctx.db
         .insert(projects)
         .values({

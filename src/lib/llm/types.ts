@@ -1,9 +1,9 @@
 export type LLMProvider = "anthropic" | "google";
 
 export type ModelId =
-  | "claude-opus-4-20250514"
-  | "claude-sonnet-4-20250514"
-  | "claude-haiku-3-5-20241022"
+  | "claude-opus-4-5-20250514"
+  | "claude-sonnet-4-5-20250929"
+  | "claude-haiku-4-5-20251001"
   | "gemini-2.0-flash";
 
 export type TaskComplexity = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
@@ -38,9 +38,9 @@ export type ModelPricing = {
 };
 
 export const MODEL_PRICING: Record<ModelId, ModelPricing> = {
-  "claude-opus-4-20250514": { inputPer1M: 15, outputPer1M: 75 },
-  "claude-sonnet-4-20250514": { inputPer1M: 3, outputPer1M: 15 },
-  "claude-haiku-3-5-20241022": { inputPer1M: 0.8, outputPer1M: 4 },
+  "claude-opus-4-5-20250514": { inputPer1M: 15, outputPer1M: 75 },
+  "claude-sonnet-4-5-20250929": { inputPer1M: 3, outputPer1M: 15 },
+  "claude-haiku-4-5-20251001": { inputPer1M: 0.8, outputPer1M: 4 },
   "gemini-2.0-flash": { inputPer1M: 0.075, outputPer1M: 0.3 },
 };
 

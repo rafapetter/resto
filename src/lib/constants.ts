@@ -1,6 +1,6 @@
 export const APP_NAME = "ATR - All The Rest";
 export const AGENT_NAME = "Resto";
-export const DEFAULT_MODEL = "claude-sonnet-4-20250514" as const;
+export const DEFAULT_MODEL = "claude-sonnet-4-5-20250929" as const;
 
 export const ROUTES = {
   home: "/",

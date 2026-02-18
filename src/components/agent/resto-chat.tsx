@@ -756,8 +756,10 @@ function RestoChatInner({ projectId }: Props) {
       <VoiceButton
         voiceMode={voiceMode}
         onToggleVoiceMode={() => {
-          setVoiceMode((v) => !v);
-          stopSpeaking();
+          const next = !voiceMode;
+          setVoiceMode(next);
+          if (next) void voiceInput.requestPermission();
+          else stopSpeaking();
         }}
         recordingState={voiceInput.state}
         onStartRecording={voiceInput.start}
@@ -765,6 +767,8 @@ function RestoChatInner({ projectId }: Props) {
         isSpeaking={isSpeaking}
         onStopSpeaking={stopSpeaking}
         isSupported={voiceInput.isSupported}
+        error={voiceInput.error}
+        onRetryPermission={() => void voiceInput.requestPermission()}
       />
     </div>
   );

@@ -2,6 +2,7 @@ import { z } from "zod/v4";
 import { createRouter, tenantProcedure } from "../init";
 import { GitHubClient } from "@/lib/github";
 import { auditLog } from "@/server/db/schema";
+import { assertAgentActions } from "@/lib/billing/gating";
 
 export const githubRouter = createRouter({
   getUser: tenantProcedure
@@ -28,6 +29,7 @@ export const githubRouter = createRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      await assertAgentActions(ctx.tenantId);
       const gh = await GitHubClient.fromProject(ctx.tenantId, input.projectId);
       const repo = await gh.createRepo({
         name: input.name,

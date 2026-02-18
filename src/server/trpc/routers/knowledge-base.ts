@@ -1,8 +1,10 @@
 import { z } from "zod/v4";
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
+import { TRPCError } from "@trpc/server";
 import { createRouter, tenantProcedure } from "../init";
 import { knowledgeFiles } from "@/server/db/schema";
 import { KnowledgeBaseService } from "@/lib/knowledge/service";
+import { getTenantPlan } from "@/lib/billing/gating";
 
 export const knowledgeBaseRouter = createRouter({
   list: tenantProcedure
@@ -71,6 +73,24 @@ export const knowledgeBaseRouter = createRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      // Check plan KB storage limit
+      const { plan } = await getTenantPlan(ctx.tenantId);
+      if (plan.limits.kbStorageMb !== -1) {
+        const [row] = await ctx.db
+          .select({
+            totalBytes: sql<number>`COALESCE(SUM(${knowledgeFiles.sizeBytes}), 0)`,
+          })
+          .from(knowledgeFiles)
+          .where(eq(knowledgeFiles.tenantId, ctx.tenantId));
+        const totalMb = Number(row?.totalBytes ?? 0) / (1024 * 1024);
+        if (totalMb >= plan.limits.kbStorageMb) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: `Knowledge base storage limit (${plan.limits.kbStorageMb}MB) reached. Upgrade at /billing.`,
+          });
+        }
+      }
+
       const kb = new KnowledgeBaseService();
       return kb.create({
         tenantId: ctx.tenantId,

@@ -23,7 +23,7 @@ export function selectModel(analysis: TaskAnalysis): ModelSelection {
   // Complex + critical -> Opus
   if (analysis.complexity >= 8 && analysis.isCritical) {
     return {
-      modelId: "claude-opus-4-20250514",
+      modelId: "claude-opus-4-5-20250514",
       provider: "anthropic",
       reason: "Complex critical task — routed to Claude Opus",
     };
@@ -32,7 +32,7 @@ export function selectModel(analysis: TaskAnalysis): ModelSelection {
   // Simple tasks -> Haiku
   if (analysis.complexity <= 3 && !analysis.isCritical) {
     return {
-      modelId: "claude-haiku-3-5-20241022",
+      modelId: "claude-haiku-4-5-20251001",
       provider: "anthropic",
       reason: "Simple non-critical task — routed to Claude Haiku",
     };
@@ -40,7 +40,7 @@ export function selectModel(analysis: TaskAnalysis): ModelSelection {
 
   // Default -> Sonnet
   return {
-    modelId: "claude-sonnet-4-20250514",
+    modelId: "claude-sonnet-4-5-20250929",
     provider: "anthropic",
     reason: "Standard task — routed to Claude Sonnet",
   };

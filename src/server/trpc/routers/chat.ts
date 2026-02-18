@@ -35,7 +35,7 @@ export const chatRouter = createRouter({
         ),
         orderBy: (conversations, { desc }) => [desc(conversations.updatedAt)],
       });
-      return conversation;
+      return conversation ?? null;
     }),
 
   saveConversation: tenantProcedure

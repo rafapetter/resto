@@ -9,13 +9,25 @@ import { integrationCredentials } from "./credentials";
 import { auditLog } from "./audit";
 import { autonomySettings } from "./autonomy";
 import { usageRecords } from "./usage";
+import { subscriptions } from "./subscriptions";
 
-export const tenantsRelations = relations(tenants, ({ many }) => ({
+export const tenantsRelations = relations(tenants, ({ one, many }) => ({
   projects: many(projects),
   auditLogs: many(auditLog),
   usageRecords: many(usageRecords),
   autonomySettings: many(autonomySettings),
   credentials: many(integrationCredentials),
+  subscription: one(subscriptions, {
+    fields: [tenants.id],
+    references: [subscriptions.tenantId],
+  }),
+}));
+
+export const subscriptionsRelations = relations(subscriptions, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [subscriptions.tenantId],
+    references: [tenants.id],
+  }),
 }));
 
 export const projectsRelations = relations(projects, ({ one, many }) => ({

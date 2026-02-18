@@ -15,8 +15,6 @@ import { selectModel } from "@/lib/llm/router";
  * to Sonnet.
  */
 export class RoutedAdapter implements CopilotServiceAdapter {
-  provider = "anthropic";
-  model = "routed";
   name = "RoutedAdapter";
 
   constructor(
@@ -45,7 +43,7 @@ export class RoutedAdapter implements CopilotServiceAdapter {
     // 3. Skip Gemini for chat (tool calling compatibility), fallback to Sonnet
     const modelId =
       selection.provider === "google"
-        ? "claude-sonnet-4-20250514"
+        ? "claude-sonnet-4-5-20250929"
         : selection.modelId;
 
     // 4. Pick adapter or fall back to default

@@ -47,7 +47,7 @@ describe("selectModel", () => {
         isCritical: true,
       })
     );
-    expect(result.modelId).toBe("claude-opus-4-20250514");
+    expect(result.modelId).toBe("claude-opus-4-5-20250514");
     expect(result.provider).toBe("anthropic");
   });
 
@@ -55,13 +55,13 @@ describe("selectModel", () => {
     const result = selectModel(
       makeAnalysis({ complexity: 3 as TaskAnalysis["complexity"] })
     );
-    expect(result.modelId).toBe("claude-haiku-3-5-20241022");
+    expect(result.modelId).toBe("claude-haiku-4-5-20251001");
     expect(result.provider).toBe("anthropic");
   });
 
   it("routes medium complexity to Claude Sonnet (default)", () => {
     const result = selectModel(makeAnalysis());
-    expect(result.modelId).toBe("claude-sonnet-4-20250514");
+    expect(result.modelId).toBe("claude-sonnet-4-5-20250929");
     expect(result.provider).toBe("anthropic");
   });
 
@@ -72,14 +72,14 @@ describe("selectModel", () => {
         isCritical: true,
       })
     );
-    expect(result.modelId).toBe("claude-sonnet-4-20250514");
+    expect(result.modelId).toBe("claude-sonnet-4-5-20250929");
   });
 
   it("routes complexity 8 + non-critical to Sonnet (not Opus)", () => {
     const result = selectModel(
       makeAnalysis({ complexity: 8 as TaskAnalysis["complexity"] })
     );
-    expect(result.modelId).toBe("claude-sonnet-4-20250514");
+    expect(result.modelId).toBe("claude-sonnet-4-5-20250929");
   });
 
   it("routes complexity 4 + requiresSpeed to Sonnet (not Gemini)", () => {
@@ -89,7 +89,7 @@ describe("selectModel", () => {
         requiresSpeed: true,
       })
     );
-    expect(result.modelId).toBe("claude-sonnet-4-20250514");
+    expect(result.modelId).toBe("claude-sonnet-4-5-20250929");
   });
 
   it("gives multimodal priority over complex+critical", () => {

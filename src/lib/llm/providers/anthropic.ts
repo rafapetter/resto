@@ -5,7 +5,7 @@ const client = new Anthropic();
 
 type AnthropicModel = Extract<
   ModelId,
-  "claude-opus-4-20250514" | "claude-sonnet-4-20250514" | "claude-haiku-3-5-20241022"
+  "claude-opus-4-5-20250514" | "claude-sonnet-4-5-20250929" | "claude-haiku-4-5-20251001"
 >;
 
 export async function callAnthropic(

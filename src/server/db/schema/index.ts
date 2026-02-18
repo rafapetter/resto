@@ -9,4 +9,5 @@ export * from "./credentials";
 export * from "./audit";
 export * from "./autonomy";
 export * from "./usage";
+export * from "./subscriptions";
 export * from "./relations";

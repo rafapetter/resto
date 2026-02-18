@@ -3,6 +3,7 @@ import { createRouter, tenantProcedure } from "../init";
 import { generateCode } from "@/lib/codegen";
 import { KnowledgeBaseService } from "@/lib/knowledge/service";
 import { auditLog, usageRecords } from "@/server/db/schema";
+import { assertAgentActions } from "@/lib/billing/gating";
 
 export const codegenRouter = createRouter({
   generate: tenantProcedure
@@ -14,6 +15,8 @@ export const codegenRouter = createRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      await assertAgentActions(ctx.tenantId);
+
       // 1. Run Claude Agent SDK code generation
       const result = await generateCode({
         projectId: input.projectId,

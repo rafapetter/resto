@@ -7,11 +7,31 @@ export type VoiceInputState = "idle" | "listening" | "processing" | "error";
 export function useVoiceInput(onTranscript: (text: string) => void) {
   const [state, setState] = useState<VoiceInputState>("idle");
   const [error, setError] = useState<string | null>(null);
+  const [isSupported, setIsSupported] = useState(false);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
 
-  const isSupported =
-    typeof window !== "undefined" &&
-    ("SpeechRecognition" in window || "webkitSpeechRecognition" in window);
+  useEffect(() => {
+    setIsSupported(
+      "SpeechRecognition" in window || "webkitSpeechRecognition" in window
+    );
+  }, []);
+
+  // Call this when voice mode is enabled to eagerly request mic permission
+  const requestPermission = useCallback(async () => {
+    if (!isSupported) return;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      // Permission granted — stop the stream immediately, we just needed the grant
+      stream.getTracks().forEach((t) => t.stop());
+      setError(null);
+      setState("idle");
+    } catch {
+      setError(
+        "Microphone access denied. Allow microphone access in your browser settings."
+      );
+      setState("error");
+    }
+  }, [isSupported]);
 
   const start = useCallback(() => {
     if (!isSupported) {
@@ -20,9 +40,11 @@ export function useVoiceInput(onTranscript: (text: string) => void) {
       return;
     }
 
+    // Abort any ongoing recognition before starting a new one
+    recognitionRef.current?.abort();
+
     setError(null);
-    const SR =
-      window.SpeechRecognition ?? window.webkitSpeechRecognition;
+    const SR = window.SpeechRecognition ?? window.webkitSpeechRecognition;
     const r = new SR();
     r.continuous = false;
     r.interimResults = false;
@@ -35,8 +57,9 @@ export function useVoiceInput(onTranscript: (text: string) => void) {
       if (transcript) {
         setState("processing");
         onTranscript(transcript);
+        // Let onend handle the reset back to idle
       }
-      setState("idle");
+      // If no transcript, onend will set back to idle
     };
 
     r.onerror = (e: SpeechRecognitionErrorEvent) => {
@@ -56,10 +79,10 @@ export function useVoiceInput(onTranscript: (text: string) => void) {
 
   const stop = useCallback(() => {
     recognitionRef.current?.stop();
-    setState("idle");
+    // Don't force idle here — let onend handle it so we don't race with onresult
   }, []);
 
   useEffect(() => () => recognitionRef.current?.abort(), []);
 
-  return { state, error, isSupported, start, stop };
+  return { state, error, isSupported, start, stop, requestPermission };
 }

@@ -9,6 +9,8 @@ import {
   CheckSquare,
   BookOpen,
   Plug,
+  BarChart2,
+  CreditCard,
 } from "lucide-react";
 import {
   Sidebar,
@@ -25,6 +27,8 @@ import {
 
 const mainNav = [
   { title: "Projects", href: "/projects", icon: FolderKanban },
+  { title: "Analytics", href: "/analytics", icon: BarChart2 },
+  { title: "Billing", href: "/billing", icon: CreditCard },
   { title: "Settings", href: "/settings", icon: Settings },
 ];
 

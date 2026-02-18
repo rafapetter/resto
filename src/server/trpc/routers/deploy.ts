@@ -2,6 +2,7 @@ import { z } from "zod/v4";
 import { createRouter, tenantProcedure } from "../init";
 import { VercelClient } from "@/lib/vercel-deploy";
 import { auditLog } from "@/server/db/schema";
+import { assertAgentActions } from "@/lib/billing/gating";
 
 export const deployRouter = createRouter({
   listProjects: tenantProcedure
@@ -21,6 +22,7 @@ export const deployRouter = createRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      await assertAgentActions(ctx.tenantId);
       const vc = await VercelClient.fromProject(ctx.tenantId, input.projectId);
       const project = await vc.createProject({
         name: input.name,
@@ -56,6 +58,7 @@ export const deployRouter = createRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      await assertAgentActions(ctx.tenantId);
       const vc = await VercelClient.fromProject(ctx.tenantId, input.projectId);
       const deployment = await vc.createDeployment({
         name: input.vercelProjectName,

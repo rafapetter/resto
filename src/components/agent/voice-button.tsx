@@ -1,6 +1,7 @@
 "use client";
 
-import { Mic, MicOff, Volume2, VolumeX } from "lucide-react";
+import { useEffect, useRef } from "react";
+import { Mic, MicOff, Volume2, VolumeX, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { VoiceInputState } from "@/hooks/use-voice-input";
@@ -14,6 +15,8 @@ type Props = {
   isSpeaking: boolean;
   onStopSpeaking: () => void;
   isSupported: boolean;
+  error?: string | null;
+  onRetryPermission?: () => void;
 };
 
 export function VoiceButton({
@@ -25,7 +28,40 @@ export function VoiceButton({
   isSpeaking,
   onStopSpeaking,
   isSupported,
+  error,
+  onRetryPermission,
 }: Props) {
+  const isHoldingRef = useRef(false);
+
+  // Listen for mouseup/touchend on document so releasing outside the button still stops recording
+  useEffect(() => {
+    if (!voiceMode) return;
+
+    const handleGlobalRelease = () => {
+      if (isHoldingRef.current) {
+        isHoldingRef.current = false;
+        onStopRecording();
+      }
+    };
+
+    document.addEventListener("mouseup", handleGlobalRelease);
+    document.addEventListener("touchend", handleGlobalRelease);
+    return () => {
+      document.removeEventListener("mouseup", handleGlobalRelease);
+      document.removeEventListener("touchend", handleGlobalRelease);
+    };
+  }, [voiceMode, onStopRecording]);
+
+  const handlePressStart = () => {
+    isHoldingRef.current = true;
+    onStartRecording();
+  };
+
+  const handlePressEnd = () => {
+    isHoldingRef.current = false;
+    onStopRecording();
+  };
+
   return (
     <div className="flex items-center gap-2 border-t bg-muted/20 px-3 py-1.5">
       {/* Voice mode toggle */}
@@ -45,14 +81,17 @@ export function VoiceButton({
       </Button>
 
       {/* Hold-to-speak mic button — only when voice mode on and supported */}
-      {voiceMode && isSupported && (
+      {voiceMode && isSupported && recordingState !== "error" && (
         <Button
           variant={recordingState === "listening" ? "destructive" : "outline"}
           size="sm"
-          onMouseDown={onStartRecording}
-          onMouseUp={onStopRecording}
-          onTouchStart={onStartRecording}
-          onTouchEnd={onStopRecording}
+          onMouseDown={handlePressStart}
+          onMouseUp={handlePressEnd}
+          onTouchStart={(e) => {
+            e.preventDefault(); // prevent ghost mouse events on touch
+            handlePressStart();
+          }}
+          onTouchEnd={handlePressEnd}
           disabled={recordingState === "processing"}
           title="Hold to speak"
           className={cn(
@@ -64,6 +103,11 @@ export function VoiceButton({
             <>
               <MicOff className="h-3.5 w-3.5" />
               Release to send
+            </>
+          ) : recordingState === "processing" ? (
+            <>
+              <Mic className="h-3.5 w-3.5" />
+              Sending…
             </>
           ) : (
             <>
@@ -86,6 +130,22 @@ export function VoiceButton({
           <Volume2 className="h-3.5 w-3.5" />
           Speaking…
         </Button>
+      )}
+
+      {/* Error feedback with retry button */}
+      {voiceMode && recordingState === "error" && error && (
+        <span className="flex items-center gap-1.5 text-xs text-destructive">
+          <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+          Microphone access denied.
+          {onRetryPermission && (
+            <button
+              onClick={onRetryPermission}
+              className="underline underline-offset-2 hover:no-underline"
+            >
+              Click to retry
+            </button>
+          )}
+        </span>
       )}
 
       {/* Browser support warning */}

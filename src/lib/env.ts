@@ -44,6 +44,23 @@ const envSchema = z.object({
     .enum(["alloy", "echo", "fable", "onyx", "nova", "shimmer"])
     .optional(),
 
+  // Stripe billing
+  STRIPE_SECRET_KEY: z.string().min(1).optional(),
+  NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: z.string().min(1).optional(),
+  STRIPE_WEBHOOK_SECRET: z.string().min(1).optional(),
+  STRIPE_PRO_PRICE_ID: z.string().min(1).optional(),
+  STRIPE_SCALE_PRICE_ID: z.string().min(1).optional(),
+
+  // PostHog (product analytics)
+  NEXT_PUBLIC_POSTHOG_KEY: z.string().min(1).optional(),
+  NEXT_PUBLIC_POSTHOG_HOST: z.string().url().optional(),
+
+  // Sentry (error tracking)
+  NEXT_PUBLIC_SENTRY_DSN: z.string().url().optional(),
+  SENTRY_AUTH_TOKEN: z.string().min(1).optional(),
+  SENTRY_ORG: z.string().min(1).optional(),
+  SENTRY_PROJECT: z.string().min(1).optional(),
+
   // App
   NEXT_PUBLIC_APP_URL: z.string().url().default("http://localhost:3000"),
 });
