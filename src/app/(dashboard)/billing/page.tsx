@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTRPC } from "@/trpc/client";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -147,18 +147,21 @@ function PlanCard({
   );
 }
 
-export default function BillingPage() {
+function SuccessHandler() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const trpc = useTRPC();
-
-  // Show success toast when redirected back from Stripe
   useEffect(() => {
     if (searchParams.get("success") === "true") {
       toast.success("Subscription activated! Welcome to your new plan.");
       router.replace("/billing");
     }
   }, [searchParams, router]);
+  return null;
+}
+
+export default function BillingPage() {
+  const router = useRouter();
+  const trpc = useTRPC();
 
   const subQ = useQuery(trpc.billing.getSubscription.queryOptions());
   const usageQ = useQuery(trpc.billing.getUsage.queryOptions());
@@ -185,6 +188,9 @@ export default function BillingPage() {
 
   return (
     <div>
+      <Suspense fallback={null}>
+        <SuccessHandler />
+      </Suspense>
       <div className="mb-6">
         <h1 className="text-2xl font-bold">Billing</h1>
         <p className="text-sm text-muted-foreground">
