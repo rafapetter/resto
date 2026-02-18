@@ -1,7 +1,8 @@
 import { z } from "zod/v4";
 import { eq, and } from "drizzle-orm";
 import { createRouter, tenantProcedure } from "../init";
-import { checklistItems } from "@/server/db/schema";
+import { checklistItems, tenants, projects } from "@/server/db/schema";
+import { sendChecklistCompleteEmail } from "@/lib/email/send";
 
 export const tasksRouter = createRouter({
   list: tenantProcedure
@@ -65,6 +66,22 @@ export const tasksRouter = createRouter({
           )
         )
         .returning();
+
+      if (input.status === "completed" && updated) {
+        const [tenant, project] = await Promise.all([
+          ctx.db.query.tenants.findFirst({ where: eq(tenants.id, ctx.tenantId) }),
+          ctx.db.query.projects.findFirst({ where: eq(projects.id, updated.projectId) }),
+        ]);
+        if (tenant?.email && project) {
+          void sendChecklistCompleteEmail({
+            to: tenant.email,
+            projectName: project.name,
+            itemTitle: updated.title,
+            projectId: project.id,
+          });
+        }
+      }
+
       return updated;
     }),
 

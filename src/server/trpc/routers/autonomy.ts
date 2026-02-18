@@ -1,7 +1,10 @@
 import { z } from "zod/v4";
+import { eq } from "drizzle-orm";
 import { createRouter, tenantProcedure } from "../init";
 import { AutonomyChecker } from "@/lib/autonomy/checker";
 import { logAuditEntry } from "@/lib/autonomy/audit";
+import { tenants, projects } from "@/server/db/schema";
+import { sendAutonomyDecisionEmail } from "@/lib/email/send";
 
 const categoryEnum = z.enum([
   "knowledge_management",
@@ -42,6 +45,7 @@ export const autonomyRouter = createRouter({
         action: z.string(),
         details: z.record(z.string(), z.unknown()).optional(),
         performedBy: z.string().default("resto_agent"),
+        outcome: z.enum(["approved", "denied"]).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -52,5 +56,23 @@ export const autonomyRouter = createRouter({
         input.details,
         input.projectId
       );
+
+      if (input.outcome === "approved" || input.outcome === "denied") {
+        const [tenant, project] = await Promise.all([
+          ctx.db.query.tenants.findFirst({ where: eq(tenants.id, ctx.tenantId) }),
+          input.projectId
+            ? ctx.db.query.projects.findFirst({ where: eq(projects.id, input.projectId) })
+            : Promise.resolve(undefined),
+        ]);
+        if (tenant?.email) {
+          void sendAutonomyDecisionEmail({
+            to: tenant.email,
+            actionType: input.action,
+            decision: input.outcome,
+            projectName: project?.name ?? "Unknown project",
+            projectId: input.projectId ?? "",
+          });
+        }
+      }
     }),
 });

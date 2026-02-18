@@ -7,11 +7,13 @@ import {
   checklistItems,
   autonomySettings,
   integrationCredentials,
+  tenants,
 } from "@/server/db/schema";
 import { KnowledgeBaseService } from "@/lib/knowledge/service";
 import { bootstrapProject } from "@/lib/agent/bootstrap/project-bootstrap";
 import type { AutonomyCategory, ApprovalLevel } from "@/lib/autonomy/types";
 import { getTenantPlan } from "@/lib/billing/gating";
+import { sendProjectMilestoneEmail } from "@/lib/email/send";
 
 // ─── Zod schema for MultiSelectValue ────────────────────────────────
 
@@ -75,6 +77,21 @@ export const projectsRouter = createRouter({
           status: "draft",
         })
         .returning();
+
+      if (project) {
+        const tenant = await ctx.db.query.tenants.findFirst({
+          where: eq(tenants.id, ctx.tenantId),
+        });
+        if (tenant?.email) {
+          void sendProjectMilestoneEmail({
+            to: tenant.email,
+            projectName: project.name,
+            projectId: project.id,
+            event: "created",
+          });
+        }
+      }
+
       return project;
     }),
 
@@ -98,6 +115,22 @@ export const projectsRouter = createRouter({
           and(eq(projects.id, id), eq(projects.tenantId, ctx.tenantId))
         )
         .returning();
+
+      if (updated && input.status) {
+        const tenant = await ctx.db.query.tenants.findFirst({
+          where: eq(tenants.id, ctx.tenantId),
+        });
+        if (tenant?.email) {
+          void sendProjectMilestoneEmail({
+            to: tenant.email,
+            projectName: updated.name,
+            projectId: updated.id,
+            event: "status_changed",
+            newStatus: input.status,
+          });
+        }
+      }
+
       return updated;
     }),
 

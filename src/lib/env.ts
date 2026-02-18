@@ -61,6 +61,10 @@ const envSchema = z.object({
   SENTRY_ORG: z.string().min(1).optional(),
   SENTRY_PROJECT: z.string().min(1).optional(),
 
+  // Resend (email notifications)
+  RESEND_API_KEY: z.string().min(1).optional(),
+  EMAIL_FROM: z.string().min(1).optional(),
+
   // App
   NEXT_PUBLIC_APP_URL: z.string().url().default("http://localhost:3000"),
 });
