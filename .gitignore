@@ -43,3 +43,4 @@ playwright-report/
 test-results/
 e2e/.clerk/
 .env.e2e
+.env*.local
