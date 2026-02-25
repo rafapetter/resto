@@ -164,12 +164,14 @@ export default function VoicePhase({ isPlaying, onComplete, content }: Props) {
     }
   }, [currentLine, transcript.length, isListening, isSpeaking, channelStage]);
 
-  // Auto-cycle with transition overlay
+  // Auto-cycle with transition overlay — fast transitions
+  const CHANNEL_DWELL_MS = 4000;
+  const TRANSITION_MS = 500;
   useEffect(() => {
     if (channelStage !== "cycling" || !isPlaying) return;
     const currentIdx = CHANNEL_ORDER.indexOf(activeChannel);
     if (currentIdx >= CHANNEL_ORDER.length - 1) {
-      const timer = setTimeout(() => { setChannelStage("done"); onComplete(); }, 3000);
+      const timer = setTimeout(() => { setChannelStage("done"); onComplete(); }, 2000);
       return () => clearTimeout(timer);
     }
     const nextChannel = CHANNEL_ORDER[currentIdx + 1];
@@ -179,9 +181,9 @@ export default function VoicePhase({ isPlaying, onComplete, content }: Props) {
       setTransitioning(true);
       setTimeout(() => {
         setActiveChannel(nextChannel);
-        setTimeout(() => setTransitioning(false), 400);
-      }, 600);
-    }, 2500);
+        setTimeout(() => setTransitioning(false), 300);
+      }, TRANSITION_MS);
+    }, CHANNEL_DWELL_MS);
     return () => clearTimeout(timer);
   }, [channelStage, activeChannel, isPlaying, onComplete]);
 
@@ -193,8 +195,8 @@ export default function VoicePhase({ isPlaying, onComplete, content }: Props) {
     <div className="relative flex h-full flex-col">
       {/* Transition overlay */}
       {transitioning && (
-        <div className="absolute inset-0 z-30 flex items-center justify-center bg-background/90 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="flex flex-col items-center gap-3 animate-in zoom-in-95 duration-300">
+        <div className="absolute inset-0 z-30 flex items-center justify-center bg-background/90 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="flex flex-col items-center gap-3 animate-in zoom-in-95 duration-200">
             {(() => { const Ch = VOICE_CHANNELS.find((c) => c.label === transitionLabel); return Ch ? <div className={cn("flex h-14 w-14 items-center justify-center rounded-2xl text-white", Ch.color)}><Ch.icon className="h-7 w-7" /></div> : null; })()}
             <p className="text-sm font-semibold">Switching to {transitionLabel}...</p>
           </div>
