@@ -1,4 +1,6 @@
-import type { LucideIcon } from "lucide-react";
+// ─── View mode (Matrix choice) ──────────────────────────────────────
+
+export type ViewMode = "magic" | "tech" | "split";
 
 // ─── Phase definitions ──────────────────────────────────────────────
 
@@ -12,7 +14,8 @@ export type DemoPhaseKey =
   | "knowledge"
   | "analytics"
   | "channels"
-  | "deploy";
+  | "deploy"
+  | "operations";
 
 export type DemoPhaseDefinition = {
   key: DemoPhaseKey;
@@ -146,6 +149,55 @@ export type DeployContent = {
   stats: { label: string; value: string }[];
 };
 
+// ─── Operations phase (Day 2+) ──────────────────────────────────────
+
+export type OperationsEvent = {
+  day: number;
+  label: string;
+  type: "gtm" | "monitor" | "fix" | "growth" | "iterate";
+};
+
+export type OperationsContent = {
+  events: OperationsEvent[];
+  finalMetrics: { label: string; value: string }[];
+};
+
+// ─── Tech overlay content ───────────────────────────────────────────
+
+export type CodeSnippet = {
+  filename: string;
+  language: string;
+  code: string;
+  highlightLines?: number[];
+};
+
+export type TechBuildOverlay = {
+  codeSnippets: CodeSnippet[];
+  terminalCommands: { command: string; output: string; delay: number }[];
+  testResults: { name: string; passed: boolean }[];
+};
+
+export type TechDeployOverlay = {
+  cicdSteps: { name: string; duration: string }[];
+  infraComponents: string[];
+};
+
+export type TechOverlay = {
+  build?: TechBuildOverlay;
+  deploy?: TechDeployOverlay;
+};
+
+// ─── Gamification ───────────────────────────────────────────────────
+
+export type Achievement = {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+  phase: DemoPhaseKey;
+  xp: number;
+};
+
 // ─── Aggregate ──────────────────────────────────────────────────────
 
 export type UseCaseDemoContent = {
@@ -159,4 +211,6 @@ export type UseCaseDemoContent = {
   analytics: AnalyticsContent;
   channels: ChannelsContent;
   deploy: DeployContent;
+  operations?: OperationsContent;
+  techOverlay?: TechOverlay;
 };

@@ -1,5 +1,6 @@
 import type { UseCaseDemoContent } from "../types";
 import { COMMON_CHANNELS, COMMON_INTEGRATIONS, makeDeployTerminal } from "./_shared";
+import type { TechOverlay, OperationsContent } from "../types";
 
 const content: UseCaseDemoContent = {
   // ─── Onboarding ────────────────────────────────────────────────────
@@ -288,6 +289,178 @@ const content: UseCaseDemoContent = {
       { label: "Avg. Order Value", value: "$153" },
     ],
   },
+
+  // ─── Operations (Day 2+) ──────────────────────────────────────────
+  operations: {
+    events: [
+      { day: 2, label: "SEO optimization: meta tags, structured data, and sitemap generated for all 842 product pages", type: "gtm" },
+      { day: 3, label: "First customer onboarded — order #001 processed and shipped automatically", type: "growth" },
+      { day: 5, label: "Cart abandonment recovery sent 312 emails — 24% recovery rate, $6.8K recaptured", type: "gtm" },
+      { day: 7, label: "Uptime monitor: 100% availability, avg response time 142ms, zero errors detected", type: "monitor" },
+      { day: 10, label: "Inventory Agent triggered auto-reorder for 3 low-stock SKUs from supplier API", type: "iterate" },
+      { day: 14, label: "Instagram Shopping integration deployed — social feed synced with product catalog", type: "gtm" },
+      { day: 21, label: "Bug detected in checkout flow for Safari mobile — patch deployed in 4 minutes", type: "fix" },
+      { day: 30, label: "Monthly report: 1,247 orders, $191K revenue, 3.9% conversion, 99.98% uptime", type: "monitor" },
+      { day: 45, label: "A/B test completed: new product page layout → +12% conversion lift, deployed to 100%", type: "iterate" },
+      { day: 60, label: "Launched loyalty program — 2,400 members enrolled, repeat purchase rate up 18%", type: "growth" },
+      { day: 90, label: "Q1 review: $580K total revenue, 3,800 customers, NPS 72, zero downtime incidents", type: "growth" },
+    ],
+    finalMetrics: [
+      { label: "Q1 Revenue", value: "$580K" },
+      { label: "Customers", value: "3,800" },
+      { label: "Uptime", value: "99.98%" },
+      { label: "Time to Market", value: "12 min" },
+    ],
+  } satisfies OperationsContent,
+
+  // ─── Tech Overlay ─────────────────────────────────────────────────
+  techOverlay: {
+    build: {
+      codeSnippets: [
+        {
+          filename: "app/shop/[category]/page.tsx",
+          language: "tsx",
+          code: `import { Suspense } from "react";
+import { db } from "@/lib/db";
+import { products } from "@/lib/db/schema";
+import { eq, desc } from "drizzle-orm";
+import { ProductGrid } from "@/components/product-grid";
+import { Filters } from "@/components/filters";
+
+type Props = { params: Promise<{ category: string }> };
+
+export default async function CategoryPage({ params }: Props) {
+  const { category } = await params;
+  const items = await db
+    .select()
+    .from(products)
+    .where(eq(products.category, category))
+    .orderBy(desc(products.createdAt));
+
+  return (
+    <div className="grid grid-cols-[240px_1fr] gap-6">
+      <Filters category={category} />
+      <Suspense fallback={<ProductGrid.Skeleton />}>
+        <ProductGrid products={items} />
+      </Suspense>
+    </div>
+  );
+}`,
+        },
+        {
+          filename: "lib/cart-recovery.ts",
+          language: "ts",
+          code: `import { db } from "@/lib/db";
+import { carts, recoveryEmails } from "@/lib/db/schema";
+import { eq, lt, and, isNull } from "drizzle-orm";
+import { sendEmail } from "@/lib/email";
+
+export async function processAbandonedCarts() {
+  const threshold = new Date(Date.now() - 60 * 60 * 1000);
+
+  const abandoned = await db
+    .select()
+    .from(carts)
+    .where(
+      and(
+        lt(carts.updatedAt, threshold),
+        isNull(carts.completedAt),
+        eq(carts.recoveryStatus, "none")
+      )
+    );
+
+  for (const cart of abandoned) {
+    const discount = cart.totalCents > 20000 ? 10 : 5;
+
+    await sendEmail({
+      to: cart.email,
+      template: "cart-recovery",
+      data: { items: cart.items, discount },
+    });
+
+    await db
+      .update(carts)
+      .set({ recoveryStatus: "email_sent" })
+      .where(eq(carts.id, cart.id));
+  }
+
+  return { processed: abandoned.length };
+}`,
+        },
+        {
+          filename: "components/product-grid.tsx",
+          language: "tsx",
+          code: `"use client";
+
+import Image from "next/image";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { formatPrice } from "@/lib/utils";
+import type { Product } from "@/lib/db/schema";
+
+type Props = { products: Product[] };
+
+export function ProductGrid({ products }: Props) {
+  return (
+    <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
+      {products.map((product) => (
+        <Card key={product.id} className="group overflow-hidden">
+          <div className="relative aspect-square overflow-hidden">
+            <Image
+              src={product.imageUrl}
+              alt={product.name}
+              fill
+              className="object-cover transition-transform group-hover:scale-105"
+            />
+            {product.stock < 10 && (
+              <Badge className="absolute right-2 top-2 bg-red-500">
+                Only {product.stock} left
+              </Badge>
+            )}
+          </div>
+          <CardContent className="p-4">
+            <h3 className="font-medium">{product.name}</h3>
+            <p className="text-lg font-bold">
+              {formatPrice(product.priceCents)}
+            </p>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+}`,
+        },
+      ],
+      terminalCommands: [
+        { command: "pnpm install", output: "Packages: +312\nProgress: resolved 487, reused 412, downloaded 75\ndone in 5.1s", delay: 2000 },
+        { command: "pnpm drizzle-kit push", output: "Pushing schema...\n✓ products table created\n✓ carts table created\n✓ orders table created\n✓ recovery_emails table created\n✓ 4 tables synced", delay: 3500 },
+        { command: "pnpm test", output: "Running 18 test suites...\n✓ Cart recovery (4 tests)\n✓ Product API (5 tests)\n✓ Checkout flow (3 tests)\n✓ Inventory sync (3 tests)\n✓ Components (3 tests)\n\nAll 18 tests passed", delay: 5500 },
+        { command: "pnpm build", output: "▲ Next.js 16.0.0\n✓ Compiled in 4.8s\n\nRoute (app)              Size\n○ /                      5.4 kB\n○ /shop/[category]       3.8 kB\n○ /product/[slug]        4.2 kB\n○ /cart                  6.1 kB\n○ /checkout              7.8 kB\nƒ /api/products          2.1 kB\nƒ /api/cart              1.8 kB\nƒ /api/webhooks/shopify  0.9 kB", delay: 8000 },
+      ],
+      testResults: [
+        { name: "Cart: abandoned detection fires after 1hr", passed: true },
+        { name: "Cart: recovery email includes discount code", passed: true },
+        { name: "Cart: high-value carts get 10% discount", passed: true },
+        { name: "Products: GET returns filtered by category", passed: true },
+        { name: "Products: search with Algolia typo tolerance", passed: true },
+        { name: "Checkout: validates inventory before charge", passed: true },
+        { name: "Checkout: Stripe webhook updates order status", passed: true },
+        { name: "Inventory: low-stock triggers reorder alert", passed: true },
+        { name: "Component: ProductGrid renders correctly", passed: true },
+        { name: "E2E: full purchase flow completes", passed: true },
+      ],
+    },
+    deploy: {
+      cicdSteps: [
+        { name: "Install dependencies", duration: "5.1s" },
+        { name: "Run tests", duration: "8.2s" },
+        { name: "Build application", duration: "4.8s" },
+        { name: "Deploy to Vercel", duration: "12s" },
+        { name: "Run health checks", duration: "3s" },
+      ],
+      infraComponents: ["Vercel Edge", "Neon PostgreSQL", "Stripe", "Shopify API", "Algolia", "Sentry"],
+    },
+  } satisfies TechOverlay,
 };
 
 export default content;

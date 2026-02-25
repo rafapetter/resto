@@ -2,28 +2,38 @@
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Play, Pause, SkipForward, ChevronLeft } from "lucide-react";
+import { Play, Pause, SkipForward, ChevronLeft, Eye, Code, Columns2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { DemoPhaseKey, DemoPhaseDefinition } from "@/lib/demo/types";
+import type { DemoPhaseKey, DemoPhaseDefinition, ViewMode } from "@/lib/demo/types";
 
 type Props = {
   currentPhase: DemoPhaseKey;
   phases: DemoPhaseDefinition[];
   isPlaying: boolean;
   useCaseName: string;
+  viewMode: ViewMode;
   onTogglePlay: () => void;
   onPhaseClick: (phase: DemoPhaseKey) => void;
   onSkip: () => void;
+  onViewModeChange: (mode: ViewMode) => void;
 };
+
+const VIEW_MODE_OPTIONS: { mode: ViewMode; icon: typeof Eye; label: string }[] = [
+  { mode: "magic", icon: Eye, label: "Magic" },
+  { mode: "tech", icon: Code, label: "Tech" },
+  { mode: "split", icon: Columns2, label: "Both" },
+];
 
 export function DemoHeaderV2({
   currentPhase,
   phases,
   isPlaying,
   useCaseName,
+  viewMode,
   onTogglePlay,
   onPhaseClick,
   onSkip,
+  onViewModeChange,
 }: Props) {
   const currentIndex = phases.findIndex((p) => p.key === currentPhase);
 
@@ -45,7 +55,7 @@ export function DemoHeaderV2({
         </Badge>
       </div>
 
-      {/* Phase stepper — horizontally scrollable */}
+      {/* Phase stepper */}
       <nav className="hidden items-center gap-0.5 overflow-x-auto md:flex">
         {phases.map((phase, i) => (
           <button
@@ -87,6 +97,32 @@ export function DemoHeaderV2({
 
       {/* Controls */}
       <div className="flex items-center gap-2">
+        {/* View mode toggle */}
+        <div className="hidden items-center gap-0.5 rounded-lg border bg-muted/50 p-0.5 sm:flex">
+          {VIEW_MODE_OPTIONS.map(({ mode, icon: Icon, label }) => (
+            <button
+              key={mode}
+              onClick={() => onViewModeChange(mode)}
+              className={cn(
+                "flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-medium transition-all",
+                viewMode === mode
+                  ? mode === "magic"
+                    ? "bg-blue-600 text-white"
+                    : mode === "tech"
+                      ? "bg-red-600 text-white"
+                      : "bg-violet-600 text-white"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+              title={label}
+            >
+              <Icon className="h-3 w-3" />
+              <span className="hidden lg:inline">{label}</span>
+            </button>
+          ))}
+        </div>
+
+        <div className="h-6 w-px bg-border" />
+
         <Button variant="ghost" size="sm" onClick={onTogglePlay} className="gap-1.5">
           {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
           <span className="hidden sm:inline">{isPlaying ? "Pause" : "Play"}</span>

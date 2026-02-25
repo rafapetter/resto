@@ -208,10 +208,31 @@ export default function OnboardingPhase({ isPlaying, onComplete, content }: Prop
       )}
 
       {launching && (
-        <div className="flex flex-col items-center gap-3 py-8">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-emerald-600 border-t-transparent" />
-          <p className="font-medium">Creating {content.projectName}...</p>
-          <p className="text-sm text-muted-foreground">Setting up knowledge base, checklist, and integrations</p>
+        <div className="flex flex-col items-center gap-4 py-8 animate-in fade-in duration-500">
+          {/* Neural network thinking animation */}
+          <div className="relative flex h-20 w-20 items-center justify-center">
+            <div className="absolute inset-0 animate-ping rounded-full bg-emerald-500/20" style={{ animationDuration: "2s" }} />
+            <div className="absolute inset-2 animate-ping rounded-full bg-emerald-500/30" style={{ animationDuration: "1.5s", animationDelay: "0.3s" }} />
+            <div className="relative flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-emerald-600 to-cyan-500 shadow-lg shadow-emerald-500/30">
+              <Brain className="h-8 w-8 text-white animate-pulse" />
+            </div>
+          </div>
+          <div className="text-center">
+            <p className="text-lg font-bold bg-gradient-to-r from-emerald-500 to-cyan-400 bg-clip-text text-transparent">
+              Resto is thinking...
+            </p>
+            <div className="mt-2 space-y-1">
+              <p className="text-sm text-muted-foreground animate-in fade-in slide-in-from-bottom-1 duration-500" style={{ animationDelay: "0.3s", animationFillMode: "both" }}>
+                Analyzing industry patterns for {content.projectName}
+              </p>
+              <p className="text-sm text-muted-foreground animate-in fade-in slide-in-from-bottom-1 duration-500" style={{ animationDelay: "0.8s", animationFillMode: "both" }}>
+                Building project blueprint & agent team
+              </p>
+              <p className="text-sm text-muted-foreground animate-in fade-in slide-in-from-bottom-1 duration-500" style={{ animationDelay: "1.3s", animationFillMode: "both" }}>
+                Setting up knowledge base, checklist, and integrations
+              </p>
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -1,4 +1,4 @@
-import type { IntegrationItem, ChannelItem, TerminalLine } from "../types";
+import type { IntegrationItem, ChannelItem, TerminalLine, OperationsContent } from "../types";
 
 // ─── Common integrations reused across use cases ────────────────────
 
@@ -33,6 +33,28 @@ export const COMMON_CHANNELS: ChannelItem[] = [
   { name: "Slack", icon: "hash", color: "purple", previewMessage: "Integrated into your team workspace with slash commands" },
   { name: "Email", icon: "mail", color: "rose", previewMessage: "Daily digests, alerts, and async communication" },
 ];
+
+// ─── Default operations content ─────────────────────────────────────
+
+export const DEFAULT_OPERATIONS: OperationsContent = {
+  events: [
+    { day: 2, label: "SEO optimization complete — meta tags, sitemap, and structured data generated", type: "gtm" },
+    { day: 5, label: "First users onboarded — automated welcome sequences triggered", type: "growth" },
+    { day: 7, label: "Uptime monitor: 100% availability, avg response time 145ms", type: "monitor" },
+    { day: 14, label: "Marketing campaign launched — email sequences and social posts scheduled", type: "gtm" },
+    { day: 21, label: "Minor bug detected in form validation — patch deployed in 3 minutes", type: "fix" },
+    { day: 30, label: "Monthly report: all KPIs trending up, zero downtime incidents", type: "monitor" },
+    { day: 45, label: "Feature iteration: user feedback analyzed, 3 UX improvements deployed", type: "iterate" },
+    { day: 60, label: "Growth milestone: 500+ active users, retention rate at 78%", type: "growth" },
+    { day: 90, label: "Q1 review: platform stable, 99.99% uptime, continuous improvement active", type: "growth" },
+  ],
+  finalMetrics: [
+    { label: "Uptime", value: "99.99%" },
+    { label: "Active Users", value: "500+" },
+    { label: "Bugs Fixed", value: "12" },
+    { label: "Time to Market", value: "12 min" },
+  ],
+};
 
 // ─── Deploy terminal generator ──────────────────────────────────────
 

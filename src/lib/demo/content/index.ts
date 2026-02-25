@@ -1,5 +1,6 @@
 import type { UseCaseSlug } from "../use-cases";
 import type { UseCaseDemoContent } from "../types";
+import { DEFAULT_OPERATIONS } from "./_shared";
 
 const loaders: Record<UseCaseSlug, () => Promise<{ default: UseCaseDemoContent }>> = {
   "doctor-clinical-management": () => import("./doctor-clinical-management"),
@@ -18,5 +19,9 @@ export async function loadDemoContent(slug: string): Promise<UseCaseDemoContent 
   const loader = loaders[slug as UseCaseSlug];
   if (!loader) return null;
   const mod = await loader();
-  return mod.default;
+  const content = mod.default;
+  if (!content.operations) {
+    content.operations = DEFAULT_OPERATIONS;
+  }
+  return content;
 }
