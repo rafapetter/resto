@@ -2,7 +2,7 @@
 
 > Your AI co-founder that handles all the rest.
 
-**Website:** [alltherest.world](https://www.alltherest.world/) · **Live app:** [resto-eight-kappa.vercel.app](https://resto-eight-kappa.vercel.app)
+**Website:** [alltherest.world](https://alltherest.world) · **Live app:** [resto.alltherest.world](https://resto.alltherest.world)
 
 ---
 
@@ -114,7 +114,7 @@ npx vercel env pull .env.local
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Open [http://localhost:3001](http://localhost:3001).
 
 ### Environment Variables
 
@@ -144,12 +144,25 @@ npx tsc --noEmit   # TypeScript check
 
 ## Deployment
 
-Auto-deploys to Vercel on push to `main`. Vercel Cron runs the weekly digest every Monday at 9am UTC.
+Auto-deploys to Vercel on push to `main`. Custom domain: `resto.alltherest.world`. Vercel Cron runs the weekly digest every Monday at 9am UTC.
 
 ```bash
 # Manual production deploy
 npx vercel --prod --yes
 ```
+
+---
+
+## ATR Ecosystem
+
+Resto is part of a 4-app ecosystem under `alltherest.world`:
+
+| App | URL | Purpose |
+|-----|-----|---------|
+| Landing | [alltherest.world](https://alltherest.world) | Marketing, 10-industry interactive demos |
+| **Resto** | [resto.alltherest.world](https://resto.alltherest.world) | AI co-founder platform (this app) |
+| Courses | [courses.alltherest.world](https://courses.alltherest.world) | Training programs |
+| Community | [community.alltherest.world](https://community.alltherest.world) | Hackathons, fellowship, community |
 
 ---
 

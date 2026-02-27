@@ -2,6 +2,9 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { cn } from "@/lib/utils";
+import { ArrowLeft } from "lucide-react";
+import Link from "next/link";
+import { useI18n } from "@/lib/demo/i18n/context";
 import type { ViewMode } from "@/lib/demo/types";
 
 // ─── Matrix digital rain canvas ─────────────────────────────────────
@@ -80,6 +83,7 @@ function Pill({
   color,
   label,
   sublabel,
+  tooltip,
   hovered,
   onHover,
   onClick,
@@ -87,6 +91,7 @@ function Pill({
   color: "blue" | "red";
   label: string;
   sublabel: string;
+  tooltip?: string;
   hovered: boolean;
   onHover: (h: boolean) => void;
   onClick: () => void;
@@ -111,7 +116,7 @@ function Pill({
       {/* Pill shape */}
       <div
         className={cn(
-          "relative h-20 w-44 rounded-full bg-gradient-to-r transition-all duration-500",
+          "relative h-16 w-36 rounded-full bg-gradient-to-r transition-all duration-500 sm:h-20 sm:w-44",
           gradientFrom,
           gradientTo,
           hovered ? `shadow-2xl ${glowColor} ring-2 ${ringColor}` : "shadow-lg"
@@ -146,9 +151,7 @@ function Pill({
       {hovered && (
         <div className="absolute -bottom-24 w-64 animate-in fade-in slide-in-from-bottom-2 duration-300">
           <div className="rounded-lg border border-zinc-700 bg-zinc-900/95 p-3 text-center text-xs text-zinc-300 shadow-xl backdrop-blur">
-            {isBlue
-              ? "Dashboards, metrics, and outcomes — no code, no jargon"
-              : "Code generation, terminal commands, architecture, deploy pipelines"}
+            {tooltip}
           </div>
         </div>
       )}
@@ -240,6 +243,7 @@ type Props = {
 };
 
 export function MatrixEntry({ useCaseName, onChoose }: Props) {
+  const { t } = useI18n();
   const [hoveredPill, setHoveredPill] = useState<"blue" | "red" | null>(null);
   const [chosen, setChosen] = useState<ViewMode | null>(null);
   const [titleVisible, setTitleVisible] = useState(false);
@@ -278,6 +282,18 @@ export function MatrixEntry({ useCaseName, onChoose }: Props) {
     >
       <MatrixRain />
 
+      {/* Back to Use Cases */}
+      <Link
+        href="/use-cases"
+        className={cn(
+          "absolute left-4 top-4 z-20 flex items-center gap-1.5 font-mono text-xs text-zinc-500 transition-all hover:text-emerald-400",
+          titleVisible ? "translate-x-0 opacity-100" : "-translate-x-4 opacity-0"
+        )}
+      >
+        <ArrowLeft className="h-3.5 w-3.5" />
+        {t("matrix.backToUseCases")}
+      </Link>
+
       {/* Vignette overlay — edges */}
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/70 via-transparent to-black/80" />
 
@@ -301,13 +317,13 @@ export function MatrixEntry({ useCaseName, onChoose }: Props) {
           )}
         >
           <p className="mb-3 font-mono text-sm tracking-[0.3em] text-emerald-400/80">
-            BUILDING: {useCaseName.toUpperCase()}
+            {t("matrix.building")} {useCaseName.toUpperCase()}
           </p>
           <h1 className="text-4xl font-bold tracking-tight text-white sm:text-5xl md:text-6xl">
-            How deep do you want
+            {t("matrix.howDeep")}
             <br />
             <span className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
-              to go?
+              {t("matrix.toGo")}
             </span>
           </h1>
         </div>
@@ -318,9 +334,9 @@ export function MatrixEntry({ useCaseName, onChoose }: Props) {
             "flex items-center justify-center transition-all duration-700",
             morpheusVisible ? "opacity-100" : "opacity-0"
           )}
-          style={{ height: 140, width: 80 }}
+          style={{ height: 170, width: 110 }}
         >
-          <div style={{ transform: "scale(2.2)", imageRendering: "pixelated" } as React.CSSProperties}>
+          <div className="scale-[1.6] sm:scale-[2.2]" style={{ imageRendering: "pixelated" } as React.CSSProperties}>
             <PixelMorpheus tick={tick} />
           </div>
         </div>
@@ -333,14 +349,14 @@ export function MatrixEntry({ useCaseName, onChoose }: Props) {
           )}
         >
           <p className="mx-auto max-w-md font-mono text-sm text-zinc-500">
-            Choose your path. You can switch anytime.
+            {t("matrix.choosePath")}
           </p>
         </div>
 
         {/* Pills */}
         <div
           className={cn(
-            "flex items-center gap-16 transition-all duration-1000 sm:gap-24",
+            "flex flex-col items-center gap-6 transition-all duration-1000 sm:flex-row sm:gap-16 md:gap-24",
             pillsVisible
               ? "translate-y-0 opacity-100"
               : "translate-y-12 opacity-0"
@@ -348,21 +364,23 @@ export function MatrixEntry({ useCaseName, onChoose }: Props) {
         >
           <Pill
             color="blue"
-            label="See the Magic"
-            sublabel="Business outcomes"
+            label={t("matrix.seeTheMagic")}
+            sublabel={t("matrix.businessOutcomes")}
+            tooltip={t("matrix.magicTooltip")}
             hovered={hoveredPill === "blue"}
             onHover={(h) => setHoveredPill(h ? "blue" : null)}
             onClick={() => handleChoose("magic")}
           />
 
           <div className="flex flex-col items-center gap-2">
-            <span className="font-mono text-xs text-zinc-600">OR</span>
+            <span className="font-mono text-xs text-zinc-600">{t("matrix.or")}</span>
           </div>
 
           <Pill
             color="red"
-            label="See How It's Built"
-            sublabel="Technical details"
+            label={t("matrix.seeHowBuilt")}
+            sublabel={t("matrix.technicalDetails")}
+            tooltip={t("matrix.techTooltip")}
             hovered={hoveredPill === "red"}
             onHover={(h) => setHoveredPill(h ? "red" : null)}
             onClick={() => handleChoose("tech")}
@@ -381,7 +399,7 @@ export function MatrixEntry({ useCaseName, onChoose }: Props) {
             className="group flex items-center gap-2 font-mono text-sm text-zinc-500 transition-colors hover:text-emerald-400"
           >
             <span className="inline-block h-px w-8 bg-zinc-700 transition-all group-hover:w-12 group-hover:bg-emerald-500" />
-            See Both Paths
+            {t("matrix.seeBothPaths")}
             <span className="inline-block h-px w-8 bg-zinc-700 transition-all group-hover:w-12 group-hover:bg-emerald-500" />
           </button>
         </div>
@@ -389,7 +407,7 @@ export function MatrixEntry({ useCaseName, onChoose }: Props) {
 
       {/* Bottom attribution */}
       <div className="absolute bottom-6 font-mono text-[10px] tracking-widest text-zinc-700">
-        POWERED BY RESTO AI
+        {t("matrix.poweredBy")}
       </div>
     </div>
   );

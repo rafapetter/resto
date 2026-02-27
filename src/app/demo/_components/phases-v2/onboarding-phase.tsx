@@ -6,22 +6,23 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ChevronRight, Check, Brain, Code, Rocket, Plug, MessageSquare, DollarSign } from "lucide-react";
 import type { OnboardingContent } from "@/lib/demo/types";
+import { useI18n } from "@/lib/demo/i18n/context";
 
 const AUTONOMY_CATEGORIES = [
-  { key: "knowledge", label: "Knowledge", icon: Brain },
-  { key: "code", label: "Code Gen", icon: Code },
-  { key: "deploy", label: "Deployment", icon: Rocket },
-  { key: "integrations", label: "Integrations", icon: Plug },
-  { key: "comms", label: "Comms", icon: MessageSquare },
-  { key: "financial", label: "Financial", icon: DollarSign },
+  { key: "knowledge", labelKey: "onboarding.autoKnowledge" as const, icon: Brain },
+  { key: "code", labelKey: "onboarding.autoCodeGen" as const, icon: Code },
+  { key: "deploy", labelKey: "onboarding.autoDeployment" as const, icon: Rocket },
+  { key: "integrations", labelKey: "onboarding.autoIntegrations" as const, icon: Plug },
+  { key: "comms", labelKey: "onboarding.autoComms" as const, icon: MessageSquare },
+  { key: "financial", labelKey: "onboarding.autoFinancial" as const, icon: DollarSign },
 ];
 
 const LEVELS = [
-  { value: "full_auto", label: "Auto", color: "bg-emerald-600 text-white" },
-  { value: "notify", label: "Notify", color: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200" },
-  { value: "quick", label: "Quick", color: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200" },
-  { value: "detail", label: "Detail", color: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200" },
-  { value: "manual", label: "Manual", color: "bg-muted text-muted-foreground" },
+  { value: "full_auto", labelKey: "onboarding.levelAuto" as const, color: "bg-emerald-600 text-white" },
+  { value: "notify", labelKey: "onboarding.levelNotify" as const, color: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200" },
+  { value: "quick", labelKey: "onboarding.levelQuick" as const, color: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200" },
+  { value: "detail", labelKey: "onboarding.levelDetail" as const, color: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200" },
+  { value: "manual", labelKey: "onboarding.levelManual" as const, color: "bg-muted text-muted-foreground" },
 ];
 
 // Default autonomy values for auto-play (maps to AUTONOMY_CATEGORIES keys)
@@ -39,6 +40,7 @@ type SubStep = "industry" | "vertical" | "features" | "autonomy";
 type Props = { isPlaying: boolean; onComplete: () => void; content: OnboardingContent };
 
 export default function OnboardingPhase({ isPlaying, onComplete, content }: Props) {
+  const { t } = useI18n();
   const [subStep, setSubStep] = useState<SubStep>("industry");
   const [selectedIndustry, setSelectedIndustry] = useState<string | null>(null);
   const [selectedVertical, setSelectedVertical] = useState<string | null>(null);
@@ -98,7 +100,7 @@ export default function OnboardingPhase({ isPlaying, onComplete, content }: Prop
   }, [isPlaying, advance, subStep]);
 
   const stepIndex = subStep === "industry" ? 0 : subStep === "vertical" ? 1 : subStep === "features" ? 2 : 3;
-  const breadcrumbs = ["Industry", "Vertical", "Features", "Autonomy"];
+  const breadcrumbs = [t("onboarding.stepIndustry"), t("onboarding.stepVertical"), t("onboarding.stepFeatures"), t("onboarding.stepAutonomy")];
 
   return (
     <div className="mx-auto max-w-2xl space-y-6 p-6">
@@ -115,10 +117,10 @@ export default function OnboardingPhase({ isPlaying, onComplete, content }: Prop
 
       <div className="text-center">
         <h2 className="text-2xl font-bold">
-          {subStep === "industry" && "What industry are you in?"}
-          {subStep === "vertical" && "What type of business?"}
-          {subStep === "features" && "Select features to build"}
-          {subStep === "autonomy" && "Set autonomy preferences"}
+          {subStep === "industry" && t("onboarding.questionIndustry")}
+          {subStep === "vertical" && t("onboarding.questionVertical")}
+          {subStep === "features" && t("onboarding.questionFeatures")}
+          {subStep === "autonomy" && t("onboarding.questionAutonomy")}
         </h2>
       </div>
 
@@ -161,7 +163,7 @@ export default function OnboardingPhase({ isPlaying, onComplete, content }: Prop
             })}
           </div>
           {!isPlaying && selectedFeatures.length > 0 && (
-            <div className="flex justify-end"><Button onClick={() => setSubStep("autonomy")} className="bg-emerald-600 hover:bg-emerald-700">Continue</Button></div>
+            <div className="flex justify-end"><Button onClick={() => setSubStep("autonomy")} className="bg-emerald-600 hover:bg-emerald-700">{t("onboarding.continue")}</Button></div>
           )}
         </div>
       )}
@@ -181,7 +183,7 @@ export default function OnboardingPhase({ isPlaying, onComplete, content }: Prop
                 )}
               >
                 <cat.icon className={cn("h-5 w-5 shrink-0 transition-colors duration-300", isAnimated ? "text-emerald-600" : "text-muted-foreground")} />
-                <span className="w-24 shrink-0 text-sm font-medium">{cat.label}</span>
+                <span className="w-24 shrink-0 text-sm font-medium">{t(cat.labelKey)}</span>
                 <div className="flex flex-1 gap-1">
                   {LEVELS.map((level) => (
                     <button
@@ -194,7 +196,7 @@ export default function OnboardingPhase({ isPlaying, onComplete, content }: Prop
                           : "text-muted-foreground hover:bg-muted"
                       )}
                     >
-                      {level.label}
+                      {t(level.labelKey)}
                     </button>
                   ))}
                 </div>
@@ -202,7 +204,7 @@ export default function OnboardingPhase({ isPlaying, onComplete, content }: Prop
             );
           })}
           {!isPlaying && Object.keys(autonomy).length === 6 && (
-            <div className="flex justify-end"><Button onClick={() => { setLaunching(true); setTimeout(onComplete, 1500); }} className="bg-emerald-600 hover:bg-emerald-700">Launch Project</Button></div>
+            <div className="flex justify-end"><Button onClick={() => { setLaunching(true); setTimeout(onComplete, 1500); }} className="bg-emerald-600 hover:bg-emerald-700">{t("onboarding.launchProject")}</Button></div>
           )}
         </div>
       )}
@@ -219,17 +221,17 @@ export default function OnboardingPhase({ isPlaying, onComplete, content }: Prop
           </div>
           <div className="text-center">
             <p className="text-lg font-bold bg-gradient-to-r from-emerald-500 to-cyan-400 bg-clip-text text-transparent">
-              Resto is thinking...
+              {t("onboarding.thinking")}
             </p>
             <div className="mt-2 space-y-1">
               <p className="text-sm text-muted-foreground animate-in fade-in slide-in-from-bottom-1 duration-500" style={{ animationDelay: "0.3s", animationFillMode: "both" }}>
-                Analyzing industry patterns for {content.projectName}
+                {t("onboarding.analyzingIndustry")} {content.projectName}
               </p>
               <p className="text-sm text-muted-foreground animate-in fade-in slide-in-from-bottom-1 duration-500" style={{ animationDelay: "0.8s", animationFillMode: "both" }}>
-                Building project blueprint & agent team
+                {t("onboarding.buildingBlueprint")}
               </p>
               <p className="text-sm text-muted-foreground animate-in fade-in slide-in-from-bottom-1 duration-500" style={{ animationDelay: "1.3s", animationFillMode: "both" }}>
-                Setting up knowledge base, checklist, and integrations
+                {t("onboarding.settingUp")}
               </p>
             </div>
           </div>

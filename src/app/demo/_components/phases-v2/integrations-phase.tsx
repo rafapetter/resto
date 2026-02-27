@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Globe, CreditCard, Mail, Calendar, Search, Image, Video, Brain, Hash, FileText, Users, BarChart2, Shield, Phone, Activity, Github, Globe2 } from "lucide-react";
 import type { IntegrationsContent } from "@/lib/demo/types";
+import { useI18n } from "@/lib/demo/i18n/context";
 
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   github: Github, globe: Globe, "credit-card": CreditCard, "globe-2": Globe2,
@@ -36,6 +37,7 @@ const CATEGORY_COLORS: Record<string, string> = {
 type Props = { isPlaying: boolean; onComplete: () => void; content: IntegrationsContent };
 
 export default function IntegrationsPhase({ isPlaying, onComplete, content }: Props) {
+  const { t } = useI18n();
   const [connectedCount, setConnectedCount] = useState(0);
 
   useEffect(() => {
@@ -54,8 +56,8 @@ export default function IntegrationsPhase({ isPlaying, onComplete, content }: Pr
   return (
     <div className="h-full overflow-y-auto p-6">
       <div className="mb-4">
-        <h2 className="text-xl font-bold">Connecting Integrations</h2>
-        <p className="text-sm text-muted-foreground">{connectedCount} of {content.integrations.length} services connected</p>
+        <h2 className="text-xl font-bold">{t("integrations.connecting")}</h2>
+        <p className="text-sm text-muted-foreground">{t("integrations.servicesConnected", { connected: connectedCount, total: content.integrations.length })}</p>
       </div>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {content.integrations.map((integration, i) => {

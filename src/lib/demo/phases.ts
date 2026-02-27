@@ -9,6 +9,7 @@ export const DEMO_PHASES: DemoPhaseDefinition[] = [
   { key: "build", label: "Build", sidebarItem: "checklist", showSidebar: true, showProjectNav: true },
   { key: "knowledge", label: "Knowledge", sidebarItem: "knowledge base", showSidebar: true, showProjectNav: true },
   { key: "analytics", label: "Analytics", sidebarItem: "analytics", showSidebar: true, showProjectNav: false },
+  { key: "orchestration", label: "Agents", sidebarItem: "agents", showSidebar: true, showProjectNav: true },
   { key: "deploy", label: "Deploy", sidebarItem: "projects", showSidebar: false, showProjectNav: false },
   { key: "operations", label: "Day 2+", sidebarItem: "projects", showSidebar: false, showProjectNav: false },
 ];

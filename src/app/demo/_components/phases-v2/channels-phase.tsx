@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { Bot, Globe, MessageCircle, Send, Hash, Mail, Check } from "lucide-react";
+import { useI18n } from "@/lib/demo/i18n/context";
 import type { ChannelsContent } from "@/lib/demo/types";
 
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -18,6 +19,7 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
 type Props = { isPlaying: boolean; onComplete: () => void; content: ChannelsContent };
 
 export default function ChannelsPhase({ isPlaying, onComplete, content }: Props) {
+  const { t } = useI18n();
   const [connectedCount, setConnectedCount] = useState(0);
 
   useEffect(() => {
@@ -37,9 +39,9 @@ export default function ChannelsPhase({ isPlaying, onComplete, content }: Props)
   return (
     <div className="flex h-full flex-col items-center justify-center gap-8 p-6">
       <div className="text-center">
-        <h2 className="text-2xl font-bold">Always Accessible</h2>
+        <h2 className="text-2xl font-bold">{t("channels.alwaysAccessible")}</h2>
         <p className="mt-1 text-muted-foreground">
-          Your AI agent is available through every channel your team uses
+          {t("channels.description")}
         </p>
       </div>
 
@@ -49,7 +51,7 @@ export default function ChannelsPhase({ isPlaying, onComplete, content }: Props)
           <Bot className="h-10 w-10" />
         </div>
         <div className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-400 text-white">
-          <span className="text-[10px] font-bold">AI</span>
+          <span className="text-[10px] font-bold">{t("channels.ai")}</span>
         </div>
       </div>
 
@@ -94,10 +96,10 @@ export default function ChannelsPhase({ isPlaying, onComplete, content }: Props)
       {connectedCount >= content.channels.length && (
         <div className="text-center animate-in fade-in">
           <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300">
-            All channels connected
+            {t("channels.allConnected")}
           </Badge>
           <p className="mt-2 text-sm text-muted-foreground">
-            Your agent orchestrator is now reachable from anywhere, 24/7
+            {t("channels.allConnectedDescription")}
           </p>
         </div>
       )}

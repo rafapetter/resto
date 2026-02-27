@@ -8,9 +8,11 @@ import { DemoHeaderV2 } from "./demo-header-v2";
 import { DemoSidebarV2 } from "./demo-sidebar-v2";
 import { MatrixEntry } from "./matrix-entry";
 import { NarrativeTimeline } from "./shared/narrative-timeline";
+import { ViewModeBar } from "./shared/view-mode-bar";
 import { PixelAgentBar } from "./shared/pixel-agent-bar";
-import { GamificationHud } from "./shared/gamification-hud";
+
 import { PhaseSkeleton } from "./shared/phase-skeleton";
+import { useI18n } from "@/lib/demo/i18n/context";
 import { cn } from "@/lib/utils";
 
 const PhaseComponents: Record<DemoPhaseKey, React.LazyExoticComponent<React.ComponentType<any>>> = {
@@ -22,6 +24,7 @@ const PhaseComponents: Record<DemoPhaseKey, React.LazyExoticComponent<React.Comp
   build: lazy(() => import("./phases-v2/build-phase")),
   knowledge: lazy(() => import("./phases-v2/knowledge-phase")),
   analytics: lazy(() => import("./phases-v2/analytics-phase")),
+  orchestration: lazy(() => import("./phases-v2/orchestration-phase")),
   channels: lazy(() => import("./phases-v2/channels-phase")),
   deploy: lazy(() => import("./phases-v2/deploy-phase")),
   operations: lazy(() => import("./phases-v2/operations-phase")),
@@ -30,16 +33,21 @@ const PhaseComponents: Record<DemoPhaseKey, React.LazyExoticComponent<React.Comp
 type Props = { slug: string };
 
 export function DemoPlayerShell({ slug }: Props) {
+  return <DemoPlayerInner slug={slug} />;
+}
+
+function DemoPlayerInner({ slug }: { slug: string }) {
+  const { locale } = useI18n();
   const [viewMode, setViewMode] = useState<ViewMode | null>(null);
   const [phase, setPhase] = useState<DemoPhaseKey>("onboarding");
   const [isPlaying, setIsPlaying] = useState(true);
   const [content, setContent] = useState<UseCaseDemoContent | null>(null);
 
   useEffect(() => {
-    loadDemoContent(slug).then((c) => {
+    loadDemoContent(slug, locale).then((c) => {
       if (c) setContent(c);
     });
-  }, [slug]);
+  }, [slug, locale]);
 
   const nextPhase = useCallback(() => {
     const keys = DEMO_PHASES.map((p) => p.key);
@@ -81,7 +89,7 @@ export function DemoPlayerShell({ slug }: Props) {
   const phaseDef = DEMO_PHASES.find((p) => p.key === phase)!;
   const PhaseComponent = PhaseComponents[phase];
   const phaseContent = content[phase as keyof UseCaseDemoContent];
-  const agents = content.analytics?.agents ?? [];
+  const agents = content.orchestration?.agents ?? [];
 
   // Build extra props for phases that support viewMode
   const extraProps: Record<string, unknown> = {};
@@ -101,23 +109,19 @@ export function DemoPlayerShell({ slug }: Props) {
         phases={DEMO_PHASES}
         isPlaying={isPlaying}
         useCaseName={content.onboarding.projectName}
-        viewMode={viewMode}
         onTogglePlay={() => setIsPlaying((p) => !p)}
         onPhaseClick={(p) => { setPhase(p); setIsPlaying(false); }}
         onSkip={skipToEnd}
-        onViewModeChange={setViewMode}
       />
 
-      {/* Narrative Timeline */}
+      {/* View mode toggle + Narrative Timeline */}
+      <ViewModeBar viewMode={viewMode} onViewModeChange={setViewMode} />
       <NarrativeTimeline currentPhase={phase} />
-
-      {/* Gamification HUD */}
-      <GamificationHud currentPhase={phase} />
 
       {/* Main area */}
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}
-        <div className={cn("transition-all duration-300", phaseDef.showSidebar ? "w-52" : "w-0")}>
+        <div className={cn("transition-all duration-300", phaseDef.showSidebar ? "w-0 md:w-52" : "w-0")}>
           {phaseDef.showSidebar && (
             <DemoSidebarV2
               activeItem={phaseDef.sidebarItem}

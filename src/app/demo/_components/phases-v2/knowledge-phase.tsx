@@ -6,6 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { BookOpen, Database, ArrowRight, Search, Brain, Layers, FileText, FolderOpen, Zap, Check } from "lucide-react";
 import type { KnowledgeContent } from "@/lib/demo/types";
+import { getLucideIcon } from "@/lib/demo/icon-map";
+import { useI18n } from "@/lib/demo/i18n/context";
 
 const tierColors: Record<string, string> = {
   index: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
@@ -30,6 +32,7 @@ type AnimPhase = "ingesting" | "querying" | "retrieving" | "context-ready" | "br
 type Props = { isPlaying: boolean; onComplete: () => void; content: KnowledgeContent };
 
 export default function KnowledgePhase({ isPlaying, onComplete, content }: Props) {
+  const { t } = useI18n();
   const [visibleDocs, setVisibleDocs] = useState(0);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [animPhase, setAnimPhase] = useState<AnimPhase>("ingesting");
@@ -118,7 +121,7 @@ export default function KnowledgePhase({ isPlaying, onComplete, content }: Props
   };
 
   return (
-    <div className="h-full overflow-y-auto p-6">
+    <div className="h-full overflow-y-auto p-3 sm:p-6">
       {/* 3-Tier Architecture Visual */}
       <div className="mb-6 rounded-xl border border-slate-200 bg-gradient-to-b from-slate-50 to-white p-5 dark:border-slate-700 dark:from-slate-900 dark:to-slate-800">
         <div className="mb-4 flex items-center gap-3">
@@ -126,13 +129,13 @@ export default function KnowledgePhase({ isPlaying, onComplete, content }: Props
             <Database className="h-5 w-5 text-emerald-600" />
           </div>
           <div>
-            <h2 className="text-lg font-bold">Knowledge Base — Single Source of Truth</h2>
-            <p className="text-sm text-muted-foreground">3-tier architecture optimized for AI agent retrieval</p>
+            <h2 className="text-lg font-bold">{t("knowledge.title")}</h2>
+            <p className="text-sm text-muted-foreground">{t("knowledge.subtitle")}</p>
           </div>
         </div>
 
         {/* Tier Pyramid */}
-        <div className="flex items-end justify-center gap-3">
+        <div className="flex items-end justify-center gap-2 sm:gap-3">
           {/* Tier 1: Index */}
           <div className={cn(
             "flex flex-col items-center transition-all duration-500",
@@ -209,7 +212,7 @@ export default function KnowledgePhase({ isPlaying, onComplete, content }: Props
               {animPhase === "context-ready" ? (
                 <>
                   <Check className="h-4 w-4 text-emerald-600" />
-                  <span className="font-medium text-emerald-700 dark:text-emerald-300">Context assembled — {contextDocs.length} documents retrieved across all tiers</span>
+                  <span className="font-medium text-emerald-700 dark:text-emerald-300">{t("knowledge.contextAssembled", { count: contextDocs.length })}</span>
                 </>
               ) : (
                 <>
@@ -219,7 +222,7 @@ export default function KnowledgePhase({ isPlaying, onComplete, content }: Props
                     <Search className="h-4 w-4 animate-bounce text-blue-600" />
                   )}
                   <span className="font-medium text-blue-700 dark:text-blue-300">
-                    {animPhase === "querying" ? "Agent query: " : "Semantic search: "}
+                    {animPhase === "querying" ? t("knowledge.agentQuery") : t("knowledge.semanticSearch")}
                   </span>
                   <span className="text-blue-600 dark:text-blue-400">{agentQuery}</span>
                   {animPhase === "querying" && <span className="inline-block h-4 w-0.5 animate-pulse bg-blue-600" />}
@@ -239,14 +242,14 @@ export default function KnowledgePhase({ isPlaying, onComplete, content }: Props
       </div>
 
       <div className="flex flex-col gap-6 lg:flex-row">
-        {/* Categories sidebar */}
-        <div className="w-full space-y-2 lg:w-56">
-          <h3 className="text-sm font-medium text-muted-foreground">Categories</h3>
+        {/* Categories sidebar — horizontal scroll on mobile, vertical on desktop */}
+        <div className="flex gap-2 overflow-x-auto pb-2 lg:w-56 lg:flex-col lg:gap-2 lg:overflow-visible lg:pb-0">
+          <h3 className="hidden text-sm font-medium text-muted-foreground lg:block">{t("knowledge.categories")}</h3>
           <button
             onClick={() => setSelectedCategory(null)}
-            className={cn("flex w-full items-center justify-between rounded-lg border px-3 py-2 text-sm transition-all", !selectedCategory ? "border-emerald-600 bg-emerald-50 font-medium dark:bg-emerald-950" : "hover:bg-muted")}
+            className={cn("flex shrink-0 items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-all lg:w-full lg:justify-between", !selectedCategory ? "border-emerald-600 bg-emerald-50 font-medium dark:bg-emerald-950" : "hover:bg-muted")}
           >
-            All Documents
+            {t("knowledge.allDocuments")}
             <Badge variant="secondary">{content.documents.slice(0, visibleDocs).length}</Badge>
           </button>
           {content.categories.map((cat) => {
@@ -255,10 +258,10 @@ export default function KnowledgePhase({ isPlaying, onComplete, content }: Props
               <button
                 key={cat.name}
                 onClick={() => setSelectedCategory(cat.name)}
-                className={cn("flex w-full items-center justify-between rounded-lg border px-3 py-2 text-sm transition-all", selectedCategory === cat.name ? "border-emerald-600 bg-emerald-50 font-medium dark:bg-emerald-950" : "hover:bg-muted")}
+                className={cn("flex shrink-0 items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-all lg:w-full lg:justify-between", selectedCategory === cat.name ? "border-emerald-600 bg-emerald-50 font-medium dark:bg-emerald-950" : "hover:bg-muted")}
               >
                 <span className="flex items-center gap-2">
-                  <span>{cat.icon}</span>
+                  {(() => { const Icon = getLucideIcon(cat.icon); return <Icon className="h-4 w-4 shrink-0" />; })()}
                   <span className="truncate">{cat.name}</span>
                 </span>
                 <Badge variant="secondary">{catCount}</Badge>
@@ -269,7 +272,7 @@ export default function KnowledgePhase({ isPlaying, onComplete, content }: Props
 
         {/* Documents */}
         <div className="flex-1 space-y-3">
-          <h3 className="text-sm font-medium text-muted-foreground">Documents ({filteredDocs.length})</h3>
+          <h3 className="text-sm font-medium text-muted-foreground">{t("knowledge.documents")} ({filteredDocs.length})</h3>
           {filteredDocs.map((doc, i) => {
             const globalIdx = content.documents.indexOf(doc);
             const isHighlighted = queryHighlight.includes(globalIdx);
@@ -295,7 +298,7 @@ export default function KnowledgePhase({ isPlaying, onComplete, content }: Props
                         {isContext && animPhase === "context-ready" && (
                           <span className="flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300">
                             <Zap className="h-2.5 w-2.5" />
-                            In context
+                            {t("knowledge.inContext")}
                           </span>
                         )}
                       </div>
@@ -329,7 +332,7 @@ export default function KnowledgePhase({ isPlaying, onComplete, content }: Props
               <div className="h-1.5 w-1.5 animate-bounce rounded-full bg-emerald-500" style={{ animationDelay: "0ms" }} />
               <div className="h-1.5 w-1.5 animate-bounce rounded-full bg-emerald-500" style={{ animationDelay: "150ms" }} />
               <div className="h-1.5 w-1.5 animate-bounce rounded-full bg-emerald-500" style={{ animationDelay: "300ms" }} />
-              <span className="ml-2 text-xs text-muted-foreground">Indexing documents...</span>
+              <span className="ml-2 text-xs text-muted-foreground">{t("knowledge.indexing")}</span>
             </div>
           )}
         </div>

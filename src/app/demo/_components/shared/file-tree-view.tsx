@@ -3,6 +3,7 @@
 import { cn } from "@/lib/utils";
 import { ChevronRight, Folder, FileCode, FileText, File } from "lucide-react";
 import type { FileTreeNode } from "@/lib/demo/types";
+import { useI18n } from "@/lib/demo/i18n/context";
 
 function getFileIcon(name: string) {
   if (name.endsWith(".tsx") || name.endsWith(".ts")) return FileCode;
@@ -30,6 +31,7 @@ type Props = {
 };
 
 export function FileTreeView({ tree, visibleCount }: Props) {
+  const { t } = useI18n();
   const flat = flattenTree(tree);
 
   return (
@@ -73,7 +75,7 @@ export function FileTreeView({ tree, visibleCount }: Props) {
             </span>
             {isLast && (
               <span className="ml-auto text-[10px] text-emerald-600">
-                creating...
+                {t("fileTree.creating")}
               </span>
             )}
           </div>

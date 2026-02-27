@@ -7,6 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Clock, Terminal, FileCode, Eye } from "lucide-react";
 import { FileTreeView } from "../shared/file-tree-view";
+import { useI18n } from "@/lib/demo/i18n/context";
 import type { BuildContent, FileTreeNode, ViewMode, TechBuildOverlay } from "@/lib/demo/types";
 
 const stageColors: Record<string, string> = {
@@ -114,6 +115,7 @@ function TerminalSim({
   commands: { command: string; output: string }[];
   visibleIdx: number;
 }) {
+  const { t } = useI18n();
   return (
     <div className="flex h-full flex-col overflow-hidden rounded-lg border border-zinc-700 bg-zinc-950">
       <div className="flex items-center gap-2 border-b border-zinc-800 bg-zinc-900 px-3 py-1.5">
@@ -122,7 +124,7 @@ function TerminalSim({
           <span className="h-2.5 w-2.5 rounded-full bg-yellow-500" />
           <span className="h-2.5 w-2.5 rounded-full bg-green-500" />
         </div>
-        <span className="text-[10px] text-zinc-500">Terminal</span>
+        <span className="text-[10px] text-zinc-500">{t("build.terminal")}</span>
       </div>
       <div className="flex-1 overflow-y-auto p-3 font-mono text-xs">
         {commands.slice(0, visibleIdx).map((cmd, i) => (
@@ -142,11 +144,12 @@ function TerminalSim({
 // ─── Preview Simulation ─────────────────────────────────────────────
 
 function PreviewSim({ progress }: { progress: number }) {
+  const { t } = useI18n();
   return (
     <div className="flex h-full flex-col overflow-hidden rounded-lg border border-zinc-300 bg-white dark:border-zinc-700 dark:bg-zinc-900">
       <div className="flex items-center gap-2 border-b px-3 py-1.5 dark:border-zinc-700">
         <Eye className="h-3 w-3 text-zinc-400" />
-        <span className="text-[10px] text-zinc-500">Live Preview</span>
+        <span className="text-[10px] text-zinc-500">{t("build.livePreview")}</span>
       </div>
       <div className="flex flex-1 flex-col items-center justify-center gap-3 p-4">
         {/* Mini app preview */}
@@ -186,13 +189,14 @@ function TestResults({
   tests: { name: string; passed: boolean }[];
   passedCount: number;
 }) {
+  const { t } = useI18n();
   return (
     <div className="space-y-1">
       {tests.slice(0, passedCount).map((test, i) => (
         <div key={i} className="flex items-center gap-2 text-xs">
           <Check className="h-3 w-3 text-emerald-500" />
           <span className="text-zinc-400">{test.name}</span>
-          <span className="text-emerald-500">PASS</span>
+          <span className="text-emerald-500">{t("build.pass")}</span>
         </div>
       ))}
     </div>
@@ -210,6 +214,7 @@ type Props = {
 };
 
 export default function BuildPhase({ isPlaying, onComplete, content, viewMode = "magic", techOverlay }: Props) {
+  const { t } = useI18n();
   const [checklist, setChecklist] = useState(() =>
     content.checklist.map((item) => ({
       ...item,
@@ -313,13 +318,13 @@ export default function BuildPhase({ isPlaying, onComplete, content, viewMode = 
       <div className="flex-1 space-y-4">
         <div className="space-y-1">
           <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Build Progress</span>
+            <span className="text-muted-foreground">{t("build.progress")}</span>
             <span className="font-medium">{Math.min(progress, 100)}%</span>
           </div>
           <Progress value={Math.min(progress, 100)} className="h-2" />
         </div>
         <Card>
-          <CardHeader className="pb-3"><CardTitle className="text-base">Checklist</CardTitle></CardHeader>
+          <CardHeader className="pb-3"><CardTitle className="text-base">{t("build.checklist")}</CardTitle></CardHeader>
           <CardContent className="space-y-2">
             {checklist.map((item, i) => (
               <div key={i} className={cn("flex items-center justify-between rounded-lg border px-3 py-2 transition-all", item.status === "completed" && "opacity-60")}>
@@ -343,7 +348,7 @@ export default function BuildPhase({ isPlaying, onComplete, content, viewMode = 
           <CardHeader className="border-b pb-3">
             <CardTitle className="flex items-center gap-2 text-sm">
               <span className="flex h-5 w-5 items-center justify-center rounded bg-emerald-100 text-[10px] font-bold text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300">&gt;_</span>
-              Project Structure
+              {t("build.projectStructure")}
               <span className="ml-auto text-xs font-normal text-muted-foreground">{fileVisible} / {totalFiles} files</span>
             </CardTitle>
           </CardHeader>
@@ -372,7 +377,7 @@ export default function BuildPhase({ isPlaying, onComplete, content, viewMode = 
         <div className="flex-1 overflow-hidden rounded-lg border border-zinc-700 bg-zinc-950">
           <div className="flex items-center gap-2 border-b border-zinc-800 px-3 py-1.5 text-xs text-zinc-500">
             <FileCode className="h-3 w-3" />
-            Explorer
+            {t("build.explorer")}
             <span className="ml-auto text-emerald-400">{fileVisible}/{totalFiles}</span>
           </div>
           <div className="max-h-[300px] overflow-y-auto p-2">
@@ -388,7 +393,7 @@ export default function BuildPhase({ isPlaying, onComplete, content, viewMode = 
         <div className="w-64 overflow-hidden rounded-lg border border-zinc-700 bg-zinc-950 p-3">
           <div className="mb-2 flex items-center gap-2 text-xs text-zinc-500">
             <Terminal className="h-3 w-3" />
-            Test Results
+            {t("build.testResults")}
             <Badge className="ml-auto bg-emerald-900 text-[9px] text-emerald-300">
               {testPassedCount}/{tests.length} passed
             </Badge>
@@ -405,13 +410,13 @@ export default function BuildPhase({ isPlaying, onComplete, content, viewMode = 
       <div className="flex h-full overflow-hidden">
         <div className="flex-1 overflow-hidden border-r border-zinc-300 dark:border-zinc-700">
           <div className="bg-blue-600 px-3 py-1 text-center text-[10px] font-bold tracking-widest text-white">
-            THE MAGIC
+            {t("build.theMagic")}
           </div>
           {magicView}
         </div>
         <div className="flex-1 overflow-hidden">
           <div className="bg-red-600 px-3 py-1 text-center text-[10px] font-bold tracking-widest text-white">
-            UNDER THE HOOD
+            {t("build.underTheHood")}
           </div>
           {techView}
         </div>

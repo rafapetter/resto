@@ -9,11 +9,14 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { useState } from "react";
+import { useI18n } from "@/lib/demo/i18n/context";
+import { LanguageToggle } from "./language-toggle";
+import type { TranslationKeys } from "@/lib/demo/i18n/types";
 
-const NAV_LINKS = [
-  { href: "#features", label: "Features" },
-  { href: "/use-cases", label: "Use Cases" },
-  { href: "#pricing", label: "Pricing" },
+const NAV_LINKS: { href: string; labelKey: keyof TranslationKeys }[] = [
+  { href: "#features", labelKey: "nav.features" },
+  { href: "/use-cases", labelKey: "nav.useCases" },
+  { href: "#pricing", labelKey: "nav.pricing" },
 ];
 
 export function MobileNav({
@@ -24,6 +27,7 @@ export function MobileNav({
   landingUrl: string;
 }) {
   const [open, setOpen] = useState(false);
+  const { t } = useI18n();
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -42,7 +46,7 @@ export function MobileNav({
             className="flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
           >
             <ChevronLeft className="size-4" />
-            Back to ATR
+            {t("nav.backToAtr")}
           </a>
           <div className="border-t border-border pt-4" />
           {NAV_LINKS.map((link) => (
@@ -52,7 +56,7 @@ export function MobileNav({
               onClick={() => setOpen(false)}
               className="text-lg font-medium text-foreground transition-colors hover:text-muted-foreground"
             >
-              {link.label}
+              {t(link.labelKey)}
             </a>
           ))}
           <a
@@ -62,14 +66,17 @@ export function MobileNav({
             onClick={() => setOpen(false)}
             className="text-lg font-medium text-foreground transition-colors hover:text-muted-foreground"
           >
-            Courses
+            {t("nav.courses")}
           </a>
+          <div className="flex items-center gap-2 pt-2">
+            <LanguageToggle />
+          </div>
           <div className="mt-4">
             <a
               href="/sign-up"
               className="flex h-10 w-full items-center justify-center rounded-lg bg-emerald-600 text-sm font-medium text-white transition-colors hover:bg-emerald-700"
             >
-              Get Started
+              {t("nav.getStarted")}
             </a>
           </div>
         </nav>

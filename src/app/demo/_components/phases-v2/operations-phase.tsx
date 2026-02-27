@@ -15,16 +15,17 @@ import {
   ArrowRight,
   X,
 } from "lucide-react";
+import { useI18n } from "@/lib/demo/i18n/context";
 import type { OperationsContent } from "@/lib/demo/types";
 
 const COMPARISON_ROWS = [
-  { label: "Time to launch", traditional: "6–12 months", resto: "12 minutes", icon: Clock },
-  { label: "Development cost", traditional: "$80K – $250K", resto: "$0 upfront", icon: DollarSign },
-  { label: "Team required", traditional: "5–15 people", resto: "Just you + Resto", icon: Users },
-  { label: "Availability", traditional: "Business hours", resto: "24/7/365", icon: Activity },
-  { label: "Updates & maintenance", traditional: "Manual, expensive", resto: "Continuous, automatic", icon: Shield },
-  { label: "GTM strategy", traditional: "Hire consultants", resto: "AI-driven, instant", icon: TrendingUp },
-];
+  { labelKey: "operations.timeToLaunch", traditionalKey: "operations.trad6to12months", restoKey: "operations.resto12minutes", icon: Clock },
+  { labelKey: "operations.devCost", traditionalKey: "operations.trad80kTo250k", restoKey: "operations.restoZeroUpfront", icon: DollarSign },
+  { labelKey: "operations.teamRequired", traditionalKey: "operations.trad5to15people", restoKey: "operations.restoJustYou", icon: Users },
+  { labelKey: "operations.availability", traditionalKey: "operations.tradBusinessHours", restoKey: "operations.resto247", icon: Activity },
+  { labelKey: "operations.updatesMaintenance", traditionalKey: "operations.tradManualExpensive", restoKey: "operations.restoContinuous", icon: Shield },
+  { labelKey: "operations.gtmStrategy", traditionalKey: "operations.tradHireConsultants", restoKey: "operations.restoAiDriven", icon: TrendingUp },
+] as const;
 
 type Props = {
   isPlaying: boolean;
@@ -33,6 +34,7 @@ type Props = {
 };
 
 export default function OperationsPhase({ isPlaying, onComplete, content }: Props) {
+  const { t } = useI18n();
   const [stage, setStage] = useState<"comparison" | "cta">("comparison");
   const [visibleRows, setVisibleRows] = useState(0);
 
@@ -53,26 +55,26 @@ export default function OperationsPhase({ isPlaying, onComplete, content }: Prop
         <div className="text-center">
           <h2 className="text-3xl font-bold">
             The{" "}
-            <span className="bg-gradient-to-r from-red-400 to-red-500 bg-clip-text text-transparent">old way</span>
+            <span className="bg-gradient-to-r from-red-400 to-red-500 bg-clip-text text-transparent">{t("operations.oldWay")}</span>
             {" "}vs{" "}
-            <span className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">Resto</span>
+            <span className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">{t("operations.resto")}</span>
           </h2>
-          <p className="mt-2 text-zinc-400">Everything you just saw in 12 minutes</p>
+          <p className="mt-2 text-zinc-400">{t("operations.everythingIn12Min")}</p>
         </div>
 
         {/* Comparison table */}
         <div className="w-full">
           <div className="mb-2 grid grid-cols-[1fr_140px_140px] gap-3 px-3 text-xs font-medium text-zinc-500">
             <span />
-            <span className="text-center">Traditional</span>
-            <span className="text-center text-emerald-400">Resto</span>
+            <span className="text-center">{t("operations.traditional")}</span>
+            <span className="text-center text-emerald-400">{t("operations.resto")}</span>
           </div>
           <div className="space-y-2">
             {COMPARISON_ROWS.map((row, i) => {
               const visible = i < visibleRows;
               return (
                 <div
-                  key={row.label}
+                  key={row.labelKey}
                   className={cn(
                     "grid grid-cols-[1fr_140px_140px] items-center gap-3 rounded-lg border border-zinc-800 bg-zinc-900/80 px-4 py-3 transition-all duration-500",
                     visible ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
@@ -80,15 +82,15 @@ export default function OperationsPhase({ isPlaying, onComplete, content }: Prop
                 >
                   <div className="flex items-center gap-2">
                     <row.icon className="h-4 w-4 text-zinc-400" />
-                    <span className="text-sm font-medium">{row.label}</span>
+                    <span className="text-sm font-medium">{t(row.labelKey)}</span>
                   </div>
                   <div className="flex items-center justify-center gap-1 text-center text-sm text-red-400">
                     <X className="h-3 w-3 shrink-0 opacity-50" />
-                    {row.traditional}
+                    {t(row.traditionalKey)}
                   </div>
                   <div className="flex items-center justify-center gap-1 text-center text-sm font-medium text-emerald-400">
                     <Check className="h-3 w-3 shrink-0" />
-                    {row.resto}
+                    {t(row.restoKey)}
                   </div>
                 </div>
               );
@@ -101,13 +103,10 @@ export default function OperationsPhase({ isPlaying, onComplete, content }: Prop
           <div className="flex w-full flex-col items-center gap-6 pt-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
             <div className="text-center">
               <h3 className="text-2xl font-bold sm:text-3xl">
-                Ready to build{" "}
-                <span className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
-                  your product?
-                </span>
+                {t("operations.readyToBuild")}
               </h3>
               <p className="mx-auto mt-2 max-w-lg text-sm text-zinc-400">
-                What takes traditional teams 6 months and $180K — Resto does in 12 minutes.
+                {t("operations.whatTakesTraditional")}
               </p>
             </div>
 
@@ -125,20 +124,20 @@ export default function OperationsPhase({ isPlaying, onComplete, content }: Prop
             <div className="flex flex-col items-center gap-3 sm:flex-row">
               <a href="/sign-up">
                 <Button size="lg" className="bg-gradient-to-r from-emerald-600 to-cyan-600 text-base font-semibold hover:from-emerald-700 hover:to-cyan-700">
-                  Start Building with Resto
+                  {t("operations.startBuilding")}
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </a>
               <a href="/use-cases">
                 <Button size="lg" variant="outline" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800">
-                  Explore More Use Cases
+                  {t("operations.exploreMoreUseCases")}
                   <ExternalLink className="ml-2 h-4 w-4" />
                 </Button>
               </a>
             </div>
 
             <p className="text-center text-xs text-zinc-600">
-              No credit card required. Start for free.
+              {t("operations.noCreditCard")}
             </p>
           </div>
         )}

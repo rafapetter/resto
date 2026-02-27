@@ -201,7 +201,7 @@ function ChannelConversation({ channelId }: { channelId: string }) {
 type Props = { isPlaying: boolean; onComplete: () => void; content: ChatContent };
 
 export default function ChatPhase({ isPlaying, onComplete, content }: Props) {
-  const MAX_MESSAGES = Math.min(content.script.length, 4);
+  const MAX_MESSAGES = Math.min(content.script.length, 3);
   const SCRIPT = content.script.slice(0, MAX_MESSAGES);
   const [activeChannel, setActiveChannel] = useState("resto");
   const [channelStage, setChannelStage] = useState<"chat" | "cycling" | "done">("chat");
@@ -228,20 +228,20 @@ export default function ChatPhase({ isPlaying, onComplete, content }: Props) {
     if (!isPlaying || isTyping || visibleMessages === 0 || visibleMessages >= SCRIPT.length || channelStage !== "chat") return;
     const lastMsg = SCRIPT[visibleMessages - 1];
     if (lastMsg?.action && !approvalDone) { const t = setTimeout(() => setApprovalDone(true), 1000); return () => clearTimeout(t); }
-    const timer = setTimeout(advanceMessage, 1200);
+    const timer = setTimeout(advanceMessage, 800);
     return () => clearTimeout(timer);
   }, [isPlaying, visibleMessages, isTyping, approvalDone, advanceMessage, SCRIPT, channelStage]);
 
   // When chat messages are done, start channel cycling
   useEffect(() => {
     if (visibleMessages >= SCRIPT.length && !isTyping && channelStage === "chat") {
-      const timer = setTimeout(() => setChannelStage("cycling"), 1500);
+      const timer = setTimeout(() => setChannelStage("cycling"), 800);
       return () => clearTimeout(timer);
     }
   }, [visibleMessages, SCRIPT.length, isTyping, channelStage]);
 
   // Time each channel stays visible (enough for messages to animate in)
-  const CHANNEL_DWELL_MS = 5000;
+  const CHANNEL_DWELL_MS = 3000;
   const TRANSITION_MS = 500;
 
   // Auto-cycle through channels with transition animation

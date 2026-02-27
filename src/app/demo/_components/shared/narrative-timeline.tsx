@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { Clock, DollarSign, TrendingUp } from "lucide-react";
 import type { DemoPhaseKey } from "@/lib/demo/types";
+import { useI18n } from "@/lib/demo/i18n/context";
 
 const PHASE_PROGRESS: Record<string, { restoMinutes: number; traditionalMonths: number; traditionalCost: number }> = {
   onboarding:   { restoMinutes: 1,  traditionalMonths: 0.5, traditionalCost: 8000 },
@@ -14,6 +15,7 @@ const PHASE_PROGRESS: Record<string, { restoMinutes: number; traditionalMonths: 
   build:        { restoMinutes: 8,  traditionalMonths: 4,   traditionalCost: 120000 },
   knowledge:    { restoMinutes: 9,  traditionalMonths: 4.5, traditionalCost: 135000 },
   analytics:    { restoMinutes: 10, traditionalMonths: 5,   traditionalCost: 150000 },
+  orchestration:{ restoMinutes: 10.5, traditionalMonths: 5.25, traditionalCost: 157000 },
   channels:     { restoMinutes: 11, traditionalMonths: 5.5, traditionalCost: 165000 },
   deploy:       { restoMinutes: 12, traditionalMonths: 6,   traditionalCost: 180000 },
   operations:   { restoMinutes: 12, traditionalMonths: 6,   traditionalCost: 180000 },
@@ -25,6 +27,7 @@ type Props = {
 };
 
 export function NarrativeTimeline({ currentPhase, className }: Props) {
+  const { t } = useI18n();
   const [animatedCost, setAnimatedCost] = useState(0);
   const progress = PHASE_PROGRESS[currentPhase];
   const restoPercent = (progress.restoMinutes / 12) * 100;
@@ -50,11 +53,22 @@ export function NarrativeTimeline({ currentPhase, className }: Props) {
 
   return (
     <div className={cn("border-b border-zinc-800 bg-zinc-950 px-4 py-2", className)}>
-      <div className="mx-auto flex max-w-6xl items-center gap-4">
+      {/* Mobile: simplified savings badge only */}
+      <div className="flex items-center justify-center gap-2 sm:hidden">
+        <TrendingUp className="h-3 w-3 text-emerald-400" />
+        <span className="text-[10px] font-bold text-emerald-400">
+          ${savedCost.toLocaleString()} & {savedMonths}mo {t("timeline.saved")}
+        </span>
+        <span className="text-[10px] text-zinc-500">|</span>
+        <span className="text-[10px] font-medium text-emerald-400">{progress.restoMinutes}min</span>
+      </div>
+
+      {/* Desktop: full dual-bar layout */}
+      <div className="mx-auto hidden max-w-6xl items-center gap-4 sm:flex">
         {/* Traditional track */}
         <div className="flex flex-1 items-center gap-2">
           <span className="shrink-0 text-[10px] font-medium uppercase tracking-wider text-zinc-600">
-            Traditional
+            {t("timeline.traditional")}
           </span>
           <div className="relative h-1.5 flex-1 overflow-hidden rounded-full bg-zinc-800">
             <div
@@ -76,14 +90,14 @@ export function NarrativeTimeline({ currentPhase, className }: Props) {
         <div className="flex shrink-0 items-center gap-1.5 rounded-full border border-emerald-800/60 bg-emerald-950/80 px-2.5 py-1">
           <TrendingUp className="h-3 w-3 text-emerald-400" />
           <span className="text-[10px] font-bold text-emerald-400">
-            ${savedCost.toLocaleString()} & {savedMonths}mo saved
+            ${savedCost.toLocaleString()} & {savedMonths}mo {t("timeline.saved")}
           </span>
         </div>
 
         {/* Resto track */}
         <div className="flex flex-1 items-center gap-2">
           <span className="shrink-0 text-[10px] font-bold uppercase tracking-wider text-emerald-500">
-            Resto
+            {t("timeline.resto")}
           </span>
           <div className="relative h-1.5 flex-1 overflow-hidden rounded-full bg-zinc-800">
             <div

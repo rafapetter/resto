@@ -25,7 +25,7 @@ const MEETING_PARTICIPANTS = [
 type Props = { isPlaying: boolean; onComplete: () => void; content: VoiceContent };
 
 export default function VoicePhase({ isPlaying, onComplete, content }: Props) {
-  const MAX_LINES = Math.min(content.transcript.length, 4);
+  const MAX_LINES = Math.min(content.transcript.length, 3);
   const transcript = content.transcript.slice(0, MAX_LINES);
   const [activeChannel, setActiveChannel] = useState("app");
   const [channelStage, setChannelStage] = useState<"voice" | "cycling" | "done">("voice");
@@ -112,13 +112,13 @@ export default function VoicePhase({ isPlaying, onComplete, content }: Props) {
           setDisplayedText(line.text.slice(0, i));
           if (i >= line.text.length) clearInterval(interval);
         }, 20);
-        const duration = Math.min(line.durationMs, 2500);
+        const duration = Math.min(line.durationMs, 1500);
         setTimeout(() => {
           setIsListening(false);
           clearInterval(interval);
           setDisplayedText(line.text);
         }, duration);
-      }, 500);
+      }, 300);
     } else {
       setIsListening(false);
       setIsSpeaking(true);
@@ -131,7 +131,7 @@ export default function VoicePhase({ isPlaying, onComplete, content }: Props) {
         setDisplayedText(line.text.slice(0, i));
         if (i >= line.text.length) clearInterval(interval);
       }, 12);
-      const duration = Math.min(line.durationMs, 3000);
+      const duration = Math.min(line.durationMs, 2000);
       setTimeout(() => {
         setIsSpeaking(false);
         clearInterval(interval);
@@ -151,7 +151,7 @@ export default function VoicePhase({ isPlaying, onComplete, content }: Props) {
     if (!isPlaying || currentLine < 0 || channelStage !== "voice") return;
     const line = transcript[currentLine];
     if (!line) return;
-    const delay = Math.min(line.durationMs, 2500) + 600;
+    const delay = Math.min(line.durationMs, 1500) + 400;
     const timer = setTimeout(advanceLine, delay);
     return () => clearTimeout(timer);
   }, [isPlaying, currentLine, transcript, advanceLine, channelStage]);
@@ -159,14 +159,14 @@ export default function VoicePhase({ isPlaying, onComplete, content }: Props) {
   // When transcript finishes, start cycling
   useEffect(() => {
     if (currentLine >= transcript.length - 1 && !isListening && !isSpeaking && channelStage === "voice") {
-      const timer = setTimeout(() => setChannelStage("cycling"), 1500);
+      const timer = setTimeout(() => setChannelStage("cycling"), 800);
       return () => clearTimeout(timer);
     }
   }, [currentLine, transcript.length, isListening, isSpeaking, channelStage]);
 
   // Auto-cycle with transition overlay — fast transitions
-  const CHANNEL_DWELL_MS = 4000;
-  const TRANSITION_MS = 500;
+  const CHANNEL_DWELL_MS = 1500;
+  const TRANSITION_MS = 400;
   useEffect(() => {
     if (channelStage !== "cycling" || !isPlaying) return;
     const currentIdx = CHANNEL_ORDER.indexOf(activeChannel);

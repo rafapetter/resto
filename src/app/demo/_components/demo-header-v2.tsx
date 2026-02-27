@@ -2,40 +2,46 @@
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Play, Pause, SkipForward, ChevronLeft, Eye, Code, Columns2 } from "lucide-react";
+import { Play, Pause, SkipForward, ChevronLeft, Languages } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { DemoPhaseKey, DemoPhaseDefinition, ViewMode } from "@/lib/demo/types";
+import { useI18n } from "@/lib/demo/i18n/context";
+import type { DemoPhaseKey, DemoPhaseDefinition } from "@/lib/demo/types";
 
 type Props = {
   currentPhase: DemoPhaseKey;
   phases: DemoPhaseDefinition[];
   isPlaying: boolean;
   useCaseName: string;
-  viewMode: ViewMode;
   onTogglePlay: () => void;
   onPhaseClick: (phase: DemoPhaseKey) => void;
   onSkip: () => void;
-  onViewModeChange: (mode: ViewMode) => void;
 };
 
-const VIEW_MODE_OPTIONS: { mode: ViewMode; icon: typeof Eye; label: string }[] = [
-  { mode: "magic", icon: Eye, label: "Magic" },
-  { mode: "tech", icon: Code, label: "Tech" },
-  { mode: "split", icon: Columns2, label: "Both" },
-];
+const PHASE_LABEL_KEYS: Record<string, string> = {
+  onboarding: "phase.setup",
+  dashboard: "phase.dashboard",
+  integrations: "phase.integrations",
+  chat: "phase.chat",
+  voice: "phase.voice",
+  build: "phase.build",
+  knowledge: "phase.knowledge",
+  analytics: "phase.analytics",
+  orchestration: "phase.agents",
+  deploy: "phase.deploy",
+  operations: "phase.day2",
+};
 
 export function DemoHeaderV2({
   currentPhase,
   phases,
   isPlaying,
   useCaseName,
-  viewMode,
   onTogglePlay,
   onPhaseClick,
   onSkip,
-  onViewModeChange,
 }: Props) {
   const currentIndex = phases.findIndex((p) => p.key === currentPhase);
+  const { locale, setLocale, t } = useI18n();
 
   return (
     <header className="sticky top-0 z-50 flex h-14 items-center justify-between border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -45,7 +51,7 @@ export function DemoHeaderV2({
           className="flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
         >
           <ChevronLeft className="h-4 w-4" />
-          Use Cases
+          <span className="hidden sm:inline">{t("header.useCases")}</span>
         </a>
         <Badge
           variant="secondary"
@@ -82,7 +88,7 @@ export function DemoHeaderV2({
             >
               {i < currentIndex ? "\u2713" : i + 1}
             </span>
-            {phase.label}
+            {t(PHASE_LABEL_KEYS[phase.key] as Parameters<typeof t>[0]) || phase.label}
           </button>
         ))}
       </nav>
@@ -92,47 +98,34 @@ export function DemoHeaderV2({
         <span className="text-xs font-medium text-muted-foreground">
           {currentIndex + 1}/{phases.length}
         </span>
-        <span className="text-xs font-medium">{phases[currentIndex]?.label}</span>
+        <span className="text-xs font-medium">{t(PHASE_LABEL_KEYS[phases[currentIndex]?.key] as Parameters<typeof t>[0]) || phases[currentIndex]?.label}</span>
       </div>
 
       {/* Controls */}
       <div className="flex items-center gap-2">
-        {/* View mode toggle */}
-        <div className="hidden items-center gap-0.5 rounded-lg border bg-muted/50 p-0.5 sm:flex">
-          {VIEW_MODE_OPTIONS.map(({ mode, icon: Icon, label }) => (
-            <button
-              key={mode}
-              onClick={() => onViewModeChange(mode)}
-              className={cn(
-                "flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-medium transition-all",
-                viewMode === mode
-                  ? mode === "magic"
-                    ? "bg-blue-600 text-white"
-                    : mode === "tech"
-                      ? "bg-red-600 text-white"
-                      : "bg-violet-600 text-white"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-              title={label}
-            >
-              <Icon className="h-3 w-3" />
-              <span className="hidden lg:inline">{label}</span>
-            </button>
-          ))}
-        </div>
+        {/* Language toggle */}
+        <button
+          onClick={() => setLocale(locale === "en" ? "pt" : "en")}
+          className="flex items-center gap-1 rounded-md border px-2 py-1 text-[10px] font-medium text-muted-foreground transition-colors hover:text-foreground"
+          title={locale === "en" ? "Mudar para Portugu\u00eas" : "Switch to English"}
+        >
+          <Languages className="h-3 w-3" />
+          {locale.toUpperCase()}
+        </button>
 
         <div className="h-6 w-px bg-border" />
 
         <Button variant="ghost" size="sm" onClick={onTogglePlay} className="gap-1.5">
           {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-          <span className="hidden sm:inline">{isPlaying ? "Pause" : "Play"}</span>
+          <span className="hidden sm:inline">{isPlaying ? t("header.pause") : t("header.play")}</span>
         </Button>
         <Button variant="ghost" size="sm" onClick={onSkip} className="gap-1.5">
           <SkipForward className="h-4 w-4" />
         </Button>
         <a href="/sign-up">
           <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700">
-            Sign Up
+            <span className="hidden sm:inline">{t("header.signUp")}</span>
+            <span className="sm:hidden">Go</span>
           </Button>
         </a>
       </div>

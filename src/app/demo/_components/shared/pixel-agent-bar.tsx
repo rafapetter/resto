@@ -4,6 +4,8 @@ import { useState, useEffect, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { ChevronUp, ChevronDown } from "lucide-react";
 import type { DemoPhaseKey, AgentCharacter } from "@/lib/demo/types";
+import { useI18n } from "@/lib/demo/i18n/context";
+import type { TranslationKeys } from "@/lib/demo/i18n/types";
 
 type AgentState = "idle" | "typing" | "reading" | "celebrating" | "sleeping" | "walking";
 
@@ -16,6 +18,7 @@ const PHASE_AGENT_STATES: Record<DemoPhaseKey, AgentState[]> = {
   build:        ["typing", "typing", "typing", "typing"],
   knowledge:    ["reading", "reading", "typing", "reading"],
   analytics:    ["reading", "typing", "reading", "reading"],
+  orchestration:["typing", "reading", "typing", "reading"],
   channels:     ["typing", "typing", "typing", "reading"],
   deploy:       ["celebrating", "celebrating", "celebrating", "celebrating"],
   operations:   ["typing", "sleeping", "typing", "sleeping"],
@@ -33,13 +36,13 @@ const PIXEL_COLORS = [
   { body: "#e11d48", hair: "#881337" },
 ];
 
-const STATE_LABELS: Record<AgentState, string> = {
-  idle: "Standby",
-  typing: "Working",
-  reading: "Analyzing",
-  celebrating: "🎉",
-  sleeping: "Resting",
-  walking: "Joining",
+const STATE_LABEL_KEYS: Record<AgentState, keyof TranslationKeys | null> = {
+  idle: "agents.standby",
+  typing: "agents.working",
+  reading: "agents.analyzing",
+  celebrating: null,
+  sleeping: "agents.resting",
+  walking: "agents.joining",
 };
 
 function PixelCharacter({
@@ -55,6 +58,7 @@ function PixelCharacter({
   task: string;
   tick: number;
 }) {
+  const { t } = useI18n();
   const colors = PIXEL_COLORS[colorIdx % PIXEL_COLORS.length];
 
   const armOffset = state === "typing" ? (tick % 2 === 0 ? -1 : 1) : 0;
@@ -131,7 +135,7 @@ function PixelCharacter({
           state === "sleeping" ? "bg-zinc-800 text-zinc-500" :
           "bg-zinc-800 text-zinc-500"
         )}>
-          {state === "typing" || state === "reading" ? task : STATE_LABELS[state]}
+          {state === "typing" || state === "reading" ? task : (STATE_LABEL_KEYS[state] != null ? t(STATE_LABEL_KEYS[state]) : "\u{1F389}")}
         </span>
       </div>
     </div>
@@ -145,7 +149,8 @@ type Props = {
 };
 
 export function PixelAgentBar({ agents, currentPhase, className }: Props) {
-  const [collapsed, setCollapsed] = useState(false);
+  const { t } = useI18n();
+  const [collapsed, setCollapsed] = useState(() => typeof window !== "undefined" && window.innerWidth < 768);
   const [tick, setTick] = useState(0);
 
   useEffect(() => {
@@ -168,7 +173,7 @@ export function PixelAgentBar({ agents, currentPhase, className }: Props) {
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
             <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
           </span>
-          {visibleAgents.length} agents active
+          {t("agents.active", { count: visibleAgents.length })}
         </span>
         {collapsed ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
       </button>

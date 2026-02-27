@@ -6,9 +6,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { Check, ExternalLink, Rocket, Github, Globe, PartyPopper, Server, Shield, Zap, Database, Lock } from "lucide-react";
+import { useI18n } from "@/lib/demo/i18n/context";
 import type { DeployContent, ViewMode } from "@/lib/demo/types";
 
 function LaunchCountdown({ onDone }: { onDone: () => void }) {
+  const { t } = useI18n();
   const [count, setCount] = useState(3);
 
   useEffect(() => {
@@ -34,7 +36,7 @@ function LaunchCountdown({ onDone }: { onDone: () => void }) {
           )}
         </div>
       </div>
-      <p className="font-mono text-lg tracking-widest text-muted-foreground">{count > 0 ? "LAUNCHING IN..." : "LIFTOFF!"}</p>
+      <p className="font-mono text-lg tracking-widest text-muted-foreground">{count > 0 ? t("deploy.launchingIn") : t("deploy.liftoff")}</p>
     </div>
   );
 }
@@ -67,12 +69,12 @@ function Confetti() {
 }
 
 const INFRA_STEPS = [
-  { icon: Database, label: "Database provisioned", detail: "PostgreSQL + pgvector on Neon" },
-  { icon: Server, label: "Edge functions deployed", detail: "Vercel Edge Runtime, 30+ regions" },
-  { icon: Lock, label: "SSL/TLS configured", detail: "Auto-provisioned via Let's Encrypt" },
-  { icon: Shield, label: "Security scan passed", detail: "0 vulnerabilities, CSP headers set" },
-  { icon: Globe, label: "DNS propagation", detail: "Cloudflare CDN, <50ms global TTFB" },
-  { icon: Zap, label: "Performance optimized", detail: "Lighthouse 98/100, Core Web Vitals green" },
+  { icon: Database, labelKey: "deploy.infraDatabase" as const, detailKey: "deploy.infraDatabaseDesc" as const },
+  { icon: Server, labelKey: "deploy.infraEdge" as const, detailKey: "deploy.infraEdgeDesc" as const },
+  { icon: Lock, labelKey: "deploy.infraSsl" as const, detailKey: "deploy.infraSslDesc" as const },
+  { icon: Shield, labelKey: "deploy.infraSecurity" as const, detailKey: "deploy.infraSecurityDesc" as const },
+  { icon: Globe, labelKey: "deploy.infraDns" as const, detailKey: "deploy.infraDnsDesc" as const },
+  { icon: Zap, labelKey: "deploy.infraPerf" as const, detailKey: "deploy.infraPerfDesc" as const },
 ];
 
 type Props = {
@@ -83,6 +85,7 @@ type Props = {
 };
 
 export default function DeployPhase({ isPlaying, onComplete, content, viewMode = "magic" }: Props) {
+  const { t } = useI18n();
   const [stage, setStage] = useState<"countdown" | "deploying" | "celebration">("countdown");
   const [visibleLines, setVisibleLines] = useState(0);
   const [visibleInfra, setVisibleInfra] = useState(0);
@@ -132,7 +135,7 @@ export default function DeployPhase({ isPlaying, onComplete, content, viewMode =
           <span className="h-3 w-3 rounded-full bg-red-500" />
           <span className="h-3 w-3 rounded-full bg-yellow-500" />
           <span className="h-3 w-3 rounded-full bg-green-500" />
-          <span className="ml-3 text-xs text-zinc-400">Terminal &mdash; Deploying to Production</span>
+          <span className="ml-3 text-xs text-zinc-400">{t("deploy.terminalTitle")}</span>
         </div>
       </div>
       <div className="max-h-72 overflow-y-auto rounded-b-lg bg-zinc-950 p-4 font-mono text-xs leading-relaxed">
@@ -148,15 +151,15 @@ export default function DeployPhase({ isPlaying, onComplete, content, viewMode =
 
   const magicView = (
     <div className="w-full max-w-md space-y-3">
-      <h3 className="text-center text-lg font-semibold">Deploying your product</h3>
-      <p className="text-center text-sm text-muted-foreground">Everything is being set up automatically</p>
+      <h3 className="text-center text-lg font-semibold">{t("deploy.deployingProduct")}</h3>
+      <p className="text-center text-sm text-muted-foreground">{t("deploy.settingUpAuto")}</p>
       <div className="space-y-2 pt-2">
         {INFRA_STEPS.map((step, i) => {
           const done = i < visibleInfra;
           const active = i === visibleInfra - 1;
           return (
             <div
-              key={step.label}
+              key={step.labelKey}
               className={cn(
                 "flex items-center gap-3 rounded-lg border p-3 transition-all duration-500",
                 done ? "border-emerald-800/50 bg-emerald-950/50" : "border-zinc-800 bg-zinc-900/50 opacity-40",
@@ -167,8 +170,8 @@ export default function DeployPhase({ isPlaying, onComplete, content, viewMode =
                 {done ? <Check className="h-4 w-4" /> : <step.icon className="h-4 w-4" />}
               </div>
               <div>
-                <p className={cn("text-sm font-medium", done ? "text-emerald-300" : "text-zinc-500")}>{step.label}</p>
-                <p className="text-xs text-zinc-500">{step.detail}</p>
+                <p className={cn("text-sm font-medium", done ? "text-emerald-300" : "text-zinc-500")}>{t(step.labelKey)}</p>
+                <p className="text-xs text-zinc-500">{t(step.detailKey)}</p>
               </div>
             </div>
           );
@@ -193,9 +196,9 @@ export default function DeployPhase({ isPlaying, onComplete, content, viewMode =
             {terminalView}
             <div className="flex items-center gap-6 text-sm">
               {[
-                { icon: Github, label: "GitHub", done: visibleLines >= 8 },
-                { icon: Globe, label: "Build", done: visibleLines >= 11 },
-                { icon: Rocket, label: "Deploy", done: visibleLines >= 13 },
+                { icon: Github, label: t("deploy.github"), done: visibleLines >= 8 },
+                { icon: Globe, label: t("deploy.build"), done: visibleLines >= 11 },
+                { icon: Rocket, label: t("deploy.deploy"), done: visibleLines >= 13 },
               ].map((step) => (
                 <div key={step.label} className="flex items-center gap-2">
                   <div className={cn("flex h-8 w-8 items-center justify-center rounded-full transition-all", step.done ? "bg-emerald-600 text-white" : "bg-muted text-muted-foreground")}>
@@ -217,8 +220,8 @@ export default function DeployPhase({ isPlaying, onComplete, content, viewMode =
             <PartyPopper className="h-10 w-10 text-emerald-600" />
           </div>
           <div>
-            <h2 className="text-3xl font-bold">Your app is live!</h2>
-            <p className="mt-2 text-muted-foreground">Deployed to production successfully</p>
+            <h2 className="text-3xl font-bold">{t("deploy.appIsLive")}</h2>
+            <p className="mt-2 text-muted-foreground">{t("deploy.deployedSuccessfully")}</p>
           </div>
           <Card className="w-full max-w-md border-emerald-200 dark:border-emerald-800">
             <CardContent className="flex items-center justify-between p-4">
@@ -226,10 +229,10 @@ export default function DeployPhase({ isPlaying, onComplete, content, viewMode =
                 <Globe className="h-5 w-5 text-emerald-600" />
                 <div>
                   <p className="text-sm font-medium">{content.projectUrl}</p>
-                  <p className="text-xs text-muted-foreground">Production deployment</p>
+                  <p className="text-xs text-muted-foreground">{t("deploy.productionDeployment")}</p>
                 </div>
               </div>
-              <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300"><Check className="mr-1 h-3 w-3" />Live</Badge>
+              <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300"><Check className="mr-1 h-3 w-3" />{t("deploy.live")}</Badge>
             </CardContent>
           </Card>
           <div className="flex gap-8 text-center">
@@ -240,7 +243,7 @@ export default function DeployPhase({ isPlaying, onComplete, content, viewMode =
               </div>
             ))}
           </div>
-          <p className="animate-pulse text-sm text-muted-foreground">Transitioning to Day 2 operations...</p>
+          <p className="animate-pulse text-sm text-muted-foreground">{t("deploy.transitioningDay2")}</p>
         </div>
       )}
     </div>

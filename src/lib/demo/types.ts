@@ -13,6 +13,7 @@ export type DemoPhaseKey =
   | "build"
   | "knowledge"
   | "analytics"
+  | "orchestration"
   | "channels"
   | "deploy"
   | "operations";
@@ -122,6 +123,9 @@ export type AnalyticsContent = {
     data: { name: string; value: number }[];
     type: "bar" | "line";
   }[];
+};
+
+export type OrchestrationContent = {
   agents: AgentCharacter[];
   humanReviewPoints: { agent: string; task: string; reason: string }[];
 };
@@ -187,17 +191,6 @@ export type TechOverlay = {
   deploy?: TechDeployOverlay;
 };
 
-// ─── Gamification ───────────────────────────────────────────────────
-
-export type Achievement = {
-  id: string;
-  title: string;
-  description: string;
-  icon: string;
-  phase: DemoPhaseKey;
-  xp: number;
-};
-
 // ─── Aggregate ──────────────────────────────────────────────────────
 
 export type UseCaseDemoContent = {
@@ -209,6 +202,7 @@ export type UseCaseDemoContent = {
   build: BuildContent;
   knowledge: KnowledgeContent;
   analytics: AnalyticsContent;
+  orchestration: OrchestrationContent;
   channels: ChannelsContent;
   deploy: DeployContent;
   operations?: OperationsContent;

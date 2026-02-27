@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/lib/demo/i18n/context";
 import {
   FolderKanban,
   MessageSquare,
@@ -14,21 +15,21 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
-type NavItem = { label: string; key: string; icon: LucideIcon };
+type NavItem = { tKey: string; key: string; icon: LucideIcon };
 
 const mainNav: NavItem[] = [
-  { label: "Projects", key: "projects", icon: FolderKanban },
-  { label: "Analytics", key: "analytics", icon: BarChart2 },
-  { label: "Billing", key: "billing", icon: CreditCard },
-  { label: "Settings", key: "settings", icon: Settings },
+  { tKey: "sidebar.projects", key: "projects", icon: FolderKanban },
+  { tKey: "sidebar.analytics", key: "analytics", icon: BarChart2 },
+  { tKey: "sidebar.billing", key: "billing", icon: CreditCard },
+  { tKey: "sidebar.settings", key: "settings", icon: Settings },
 ];
 
 const projectNav: NavItem[] = [
-  { label: "Chat", key: "chat", icon: MessageSquare },
-  { label: "Checklist", key: "checklist", icon: CheckSquare },
-  { label: "Knowledge Base", key: "knowledge base", icon: BookOpen },
-  { label: "Integrations", key: "integrations", icon: Plug },
-  { label: "Agents", key: "agents", icon: Users },
+  { tKey: "sidebar.chat", key: "chat", icon: MessageSquare },
+  { tKey: "sidebar.checklist", key: "checklist", icon: CheckSquare },
+  { tKey: "sidebar.knowledgeBase", key: "knowledge base", icon: BookOpen },
+  { tKey: "sidebar.integrations", key: "integrations", icon: Plug },
+  { tKey: "sidebar.agents", key: "agents", icon: Users },
 ];
 
 type Props = {
@@ -38,6 +39,8 @@ type Props = {
 };
 
 export function DemoSidebarV2({ activeItem, showProjectNav = false, projectName }: Props) {
+  const { t } = useI18n();
+
   return (
     <aside className="hidden w-52 shrink-0 border-r bg-muted/30 md:block">
       <div className="flex h-full flex-col">
@@ -50,7 +53,7 @@ export function DemoSidebarV2({ activeItem, showProjectNav = false, projectName 
 
         <div className="flex-1 space-y-1 p-3">
           <p className="mb-2 px-2 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-            Navigation
+            {t("sidebar.navigation")}
           </p>
           {mainNav.map((item) => (
             <div
@@ -63,7 +66,7 @@ export function DemoSidebarV2({ activeItem, showProjectNav = false, projectName 
               )}
             >
               <item.icon className="h-4 w-4" />
-              {item.label}
+              {t(item.tKey as Parameters<typeof t>[0])}
             </div>
           ))}
 
@@ -83,7 +86,7 @@ export function DemoSidebarV2({ activeItem, showProjectNav = false, projectName 
                   )}
                 >
                   <item.icon className="h-4 w-4" />
-                  {item.label}
+                  {t(item.tKey as Parameters<typeof t>[0])}
                 </div>
               ))}
             </>

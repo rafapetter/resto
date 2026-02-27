@@ -4,294 +4,213 @@ import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { AlertTriangle, Radio, Activity, MessageSquare } from "lucide-react";
-import { Bar, BarChart, Line, LineChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from "recharts";
-import type { AnalyticsContent, AgentCharacter } from "@/lib/demo/types";
-
-type AgentStatus = "working" | "idle" | "communicating" | "needs-review";
+import {
+  TrendingUp,
+  TrendingDown,
+  BarChart3,
+  DollarSign,
+  Users,
+  Target,
+  ShoppingCart,
+  Clock,
+  Repeat,
+  ArrowUpRight,
+  Zap,
+  PieChart,
+} from "lucide-react";
+import {
+  Bar,
+  BarChart,
+  Line,
+  LineChart,
+  Area,
+  AreaChart,
+  ResponsiveContainer,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+  Cell,
+} from "recharts";
+import type { AnalyticsContent } from "@/lib/demo/types";
+import { useI18n } from "@/lib/demo/i18n/context";
 
 type Props = { isPlaying: boolean; onComplete: () => void; content: AnalyticsContent };
 
-// Position agents in a circular layout around the orchestrator
-function getAgentPositions(
-  leadAgent: AgentCharacter | undefined,
-  teamAgents: AgentCharacter[],
-  width: number,
-  height: number
-) {
-  const cx = width / 2;
-  const cy = height / 2;
-  const positions: Record<string, { x: number; y: number; angle: number }> = {};
+const KPI_ICONS = [DollarSign, Users, Target, ShoppingCart, TrendingUp, Repeat, PieChart, Zap];
 
-  if (leadAgent) {
-    positions[leadAgent.name] = { x: cx, y: cy, angle: 0 };
-  }
+// Generate deterministic pseudo-random unit economics from chart data
+function deriveUnitEconomics(charts: AnalyticsContent["charts"]) {
+  const seed = charts.reduce((acc, c) => acc + c.data.reduce((s, d) => s + d.value, 0), 0);
+  const r = (min: number, max: number) => Math.round(min + ((seed * 9301 + 49297) % 233280) / 233280 * (max - min));
 
-  const radius = Math.min(width, height) * 0.40;
-  teamAgents.forEach((agent, i) => {
-    const angle = (i / teamAgents.length) * Math.PI * 2 - Math.PI / 2;
-    positions[agent.name] = {
-      x: cx + Math.cos(angle) * radius,
-      y: cy + Math.sin(angle) * radius,
-      angle,
-    };
-  });
+  const cac = r(18, 65);
+  const ltv = r(cac * 3, cac * 8);
+  const aov = r(28, 180);
+  const paybackMonths = +(cac / (aov * 0.3)).toFixed(1);
+  const grossMargin = r(55, 78);
+  const churnRate = +(r(15, 45) / 10).toFixed(1);
+  const nps = r(42, 82);
+  const arpu = r(15, 95);
+  const conversionRate = +(r(18, 52) / 10).toFixed(1);
+  const mrr = r(8, 45) * 1000;
 
-  return positions;
+  return { cac, ltv, aov, paybackMonths, grossMargin, churnRate, nps, arpu, conversionRate, mrr };
 }
 
-// SVG animated connection line
-function ConnectionLine({
-  x1, y1, x2, y2, active, color,
-}: {
-  x1: number; y1: number; x2: number; y2: number; active: boolean; color: string;
-}) {
-  return (
-    <g>
-      <line
-        x1={x1} y1={y1} x2={x2} y2={y2}
-        stroke={active ? color : "#475569"}
-        strokeWidth={active ? 3 : 0.8}
-        strokeDasharray={active ? "10 6" : "4 10"}
-        strokeOpacity={active ? 0.8 : 0.15}
-        className="transition-all duration-700"
-      >
-        {active && (
-          <animate attributeName="stroke-dashoffset" from="0" to="-32" dur="1s" repeatCount="indefinite" />
-        )}
-      </line>
-      {active && (
-        <circle r="5" fill={color} opacity="0.9">
-          <animateMotion dur="1.5s" repeatCount="indefinite" path={`M${x1},${y1} L${x2},${y2}`} />
-        </circle>
-      )}
-    </g>
-  );
+// Generate funnel data from chart values — stage keys are i18n keys, translated at render time
+function deriveFunnelData(charts: AnalyticsContent["charts"]) {
+  const base = charts[0]?.data.reduce((s, d) => s + d.value, 0) ?? 1000;
+  return [
+    { stageKey: "analytics.visitors" as const, value: base * 100, pct: 100 },
+    { stageKey: "analytics.engaged" as const, value: Math.round(base * 45), pct: 45 },
+    { stageKey: "analytics.cart" as const, value: Math.round(base * 18), pct: 18 },
+    { stageKey: "analytics.checkout" as const, value: Math.round(base * 8), pct: 8 },
+    { stageKey: "analytics.purchased" as const, value: Math.round(base * 3.8), pct: 3.8 },
+  ];
 }
 
-// Floating speech bubble
-function SpeechBubble({ text, x, y, angle, isLead }: { text: string; x: number; y: number; angle: number; isLead: boolean }) {
-  const bubbleW = 280;
-  const bubbleH = 70;
-  let bx: number;
-  let by: number;
-
-  if (isLead) {
-    bx = x - bubbleW / 2;
-    by = y - 120;
-  } else {
-    const pushDist = 72;
-    bx = x + Math.cos(angle) * pushDist - bubbleW / 2;
-    by = y + Math.sin(angle) * pushDist - bubbleH / 2;
-  }
-
-  return (
-    <foreignObject x={bx} y={by} width={bubbleW} height={bubbleH} className="pointer-events-none">
-      <div className="flex h-full items-center rounded-xl border border-slate-500/60 bg-slate-800/95 px-4 py-2.5 text-[18px] leading-snug text-slate-100 shadow-xl backdrop-blur-sm">
-        <span className="line-clamp-2">{text}</span>
-      </div>
-    </foreignObject>
-  );
+// Generate cohort retention data — week numbers only, label built at render time
+function deriveCohortData() {
+  return [
+    { week: 1, retention: 100, revenue: 100 },
+    { week: 2, retention: 72, revenue: 85 },
+    { week: 3, retention: 58, revenue: 74 },
+    { week: 4, retention: 48, revenue: 68 },
+    { week: 5, retention: 42, revenue: 64 },
+    { week: 6, retention: 38, revenue: 61 },
+    { week: 8, retention: 34, revenue: 58 },
+    { week: 12, retention: 28, revenue: 52 },
+  ];
 }
 
-// Single agent on the stage
-function StageAgent({
-  agent, x, y, angle, status, isLead, speechBubble,
-}: {
-  agent: AgentCharacter;
-  x: number;
-  y: number;
-  angle: number;
-  status: AgentStatus;
-  isLead: boolean;
-  speechBubble: string | null;
-}) {
-  const size = isLead ? 56 : 38;
-  const statusColor =
-    status === "working" ? "#10b981" :
-    status === "communicating" ? "#3b82f6" :
-    status === "needs-review" ? "#f59e0b" :
-    "#64748b";
-
-  return (
-    <g>
-      {/* Outer glow for orchestrator */}
-      {isLead && (
-        <>
-          <circle cx={x} cy={y} r={size + 22} fill="none" stroke="#10b981" strokeWidth="1" strokeOpacity="0.15">
-            <animate attributeName="r" values={`${size + 18};${size + 28};${size + 18}`} dur="4s" repeatCount="indefinite" />
-            <animate attributeName="stroke-opacity" values="0.15;0.05;0.15" dur="4s" repeatCount="indefinite" />
-          </circle>
-          <circle cx={x} cy={y} r={size + 12} fill="none" stroke="#10b981" strokeWidth="2" strokeOpacity="0.3">
-            <animate attributeName="r" values={`${size + 10};${size + 16};${size + 10}`} dur="3s" repeatCount="indefinite" />
-            <animate attributeName="stroke-opacity" values="0.3;0.1;0.3" dur="3s" repeatCount="indefinite" />
-          </circle>
-        </>
-      )}
-
-      {/* Status ring */}
-      <circle
-        cx={x} cy={y} r={size + 4}
-        fill="none"
-        stroke={statusColor}
-        strokeWidth={status === "working" || status === "communicating" ? 4 : 2}
-        strokeOpacity={status === "idle" ? 0.3 : 0.8}
-        className="transition-all duration-500"
-      >
-        {(status === "working" || status === "communicating") && (
-          <animate attributeName="stroke-opacity" values="0.8;0.4;0.8" dur="1.5s" repeatCount="indefinite" />
-        )}
-      </circle>
-
-      {/* Agent circle */}
-      <circle cx={x} cy={y} r={size} fill={agent.color || "#1e293b"} opacity="0.9" />
-
-      {/* Avatar emoji */}
-      <text x={x} y={y + 2} textAnchor="middle" dominantBaseline="central" fontSize={isLead ? 44 : 30}>
-        {agent.avatar}
-      </text>
-
-      {/* "ORCHESTRATOR" badge above lead */}
-      {isLead && (
-        <>
-          <rect
-            x={x - 78}
-            y={y - size - 34}
-            width={156}
-            height={28}
-            rx="14"
-            fill="#065f46"
-            opacity="0.95"
-          />
-          <text x={x} y={y - size - 16} textAnchor="middle" fontSize={15} fill="#6ee7b7" fontWeight="bold" letterSpacing="2">
-            ORCHESTRATOR
-          </text>
-        </>
-      )}
-
-      {/* Text background for readability */}
-      <rect
-        x={x - (isLead ? 80 : 65)}
-        y={y + size + 6}
-        width={isLead ? 160 : 130}
-        height={isLead ? 52 : 46}
-        rx="6"
-        fill="#0f172a"
-        opacity="0.85"
-      />
-
-      {/* Name label */}
-      <text x={x} y={y + size + (isLead ? 28 : 26)} textAnchor="middle" fontSize={isLead ? 24 : 20} fill="#f1f5f9" fontWeight="bold">
-        {agent.name}
-      </text>
-      <text x={x} y={y + size + (isLead ? 46 : 43)} textAnchor="middle" fontSize={isLead ? 16 : 14} fill="#94a3b8">
-        {agent.role}
-      </text>
-
-      {/* Status dot */}
-      <circle cx={x + size * 0.7} cy={y - size * 0.7} r={isLead ? 10 : 8} fill={statusColor} stroke="#0f172a" strokeWidth="2.5">
-        {(status === "working" || status === "needs-review") && (
-          <animate attributeName="r" values={`${isLead ? 8 : 6};${isLead ? 12 : 9};${isLead ? 8 : 6}`} dur="1.2s" repeatCount="indefinite" />
-        )}
-      </circle>
-
-      {/* Speech bubble */}
-      {speechBubble && (
-        <SpeechBubble text={speechBubble} x={x} y={y} angle={angle} isLead={isLead} />
-      )}
-    </g>
-  );
+// Top performing items
+function deriveRankings(charts: AnalyticsContent["charts"]) {
+  const data = charts[0]?.data ?? [];
+  return data
+    .map((d) => ({ name: d.name, value: d.value, change: Math.round((Math.random() - 0.3) * 30) }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 5);
 }
+
+const FUNNEL_COLORS = ["#10b981", "#34d399", "#6ee7b7", "#a7f3d0", "#d1fae5"];
 
 export default function AnalyticsPhase({ isPlaying, onComplete, content }: Props) {
-  const [agentStatuses, setAgentStatuses] = useState<Record<string, AgentStatus>>({});
-  const [tick, setTick] = useState(0);
-  const [speechBubbles, setSpeechBubbles] = useState<Record<string, string | null>>({});
-  const [activeConnections, setActiveConnections] = useState<string[]>([]);
-  const [missionIndex, setMissionIndex] = useState(0);
-
-  const leadAgent = content.agents.find((a) => !a.reportsTo);
-  const teamAgents = content.agents.filter((a) => a.reportsTo);
-
-  const stageW = 960;
-  const stageH = 700;
-  const positions = useMemo(
-    () => getAgentPositions(leadAgent, teamAgents, stageW, stageH),
-    [leadAgent, teamAgents]
-  );
-
-  const missions = useMemo(() => [
-    "Analyzing incoming data streams",
-    ...content.humanReviewPoints.map((rp) => rp.task),
-    "Processing batch operations",
-    "Generating performance reports",
-    "Optimizing agent workloads",
-  ], [content.humanReviewPoints]);
+  const { t } = useI18n();
+  const [revealStage, setRevealStage] = useState(0);
+  // 0=nothing, 1=KPIs, 2=charts, 3=unit economics, 4=funnel+cohort, 5=rankings
 
   useEffect(() => {
-    const timer = setInterval(() => setTick((t) => t + 1), 1800);
-    return () => clearInterval(timer);
-  }, []);
-
-  useEffect(() => {
-    const statuses: Record<string, AgentStatus> = {};
-    const bubbles: Record<string, string | null> = {};
-    const connections: string[] = [];
-
-    content.agents.forEach((agent, i) => {
-      const isReviewPoint = content.humanReviewPoints.some((rp) => rp.agent === agent.name);
-
-      if (isReviewPoint && tick % 5 === 3) {
-        statuses[agent.name] = "needs-review";
-      } else {
-        const cycle: AgentStatus[] = ["working", "communicating", "working", "idle", "working"];
-        statuses[agent.name] = cycle[(tick + i) % cycle.length];
-      }
-
-      if ((tick + i) % 5 === 0 && agent.tasks.length > 0) {
-        bubbles[agent.name] = agent.tasks[(tick + i) % agent.tasks.length];
-      } else {
-        bubbles[agent.name] = null;
-      }
-
-      if (statuses[agent.name] === "communicating" && leadAgent) {
-        connections.push(`${agent.name}-${leadAgent.name}`);
-      }
-    });
-
-    if (leadAgent) {
-      statuses[leadAgent.name] = tick % 3 === 0 ? "communicating" : "working";
-      if (tick % 4 === 1 && leadAgent.tasks.length > 0) {
-        bubbles[leadAgent.name] = leadAgent.tasks[tick % leadAgent.tasks.length];
-      }
-    }
-
-    setAgentStatuses(statuses);
-    setSpeechBubbles(bubbles);
-    setActiveConnections(connections);
-    setMissionIndex(tick % missions.length);
-  }, [tick, content.agents, content.humanReviewPoints, leadAgent, missions]);
-
-  useEffect(() => {
-    if (tick > 10 && isPlaying) {
-      const timer = setTimeout(onComplete, 2000);
+    if (revealStage < 5) {
+      const delays = [300, 500, 500, 500, 400];
+      const timer = setTimeout(() => setRevealStage((s) => s + 1), delays[revealStage]);
       return () => clearTimeout(timer);
     }
-  }, [tick, isPlaying, onComplete]);
+  }, [revealStage]);
+
+  useEffect(() => {
+    if (revealStage >= 5 && isPlaying) {
+      const timer = setTimeout(onComplete, 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [revealStage, isPlaying, onComplete]);
+
+  const unitEcon = useMemo(() => deriveUnitEconomics(content.charts), [content.charts]);
+
+  // Build a unified KPI array: chart-derived + unit economics, always 10 items (2 rows of 5)
+  const kpis = useMemo(() => {
+    const fromCharts = content.charts.slice(0, 4).map((chart, i) => {
+      const values = chart.data.map((d) => d.value);
+      const total = values.reduce((a, b) => a + b, 0);
+      const avg = Math.round(total / values.length);
+      const last = values[values.length - 1] ?? 0;
+      const prev = values[values.length - 2] ?? last;
+      const change = prev !== 0 ? Math.round(((last - prev) / prev) * 100) : 0;
+      return { label: chart.label, value: `${avg.toLocaleString()}`, change, Icon: KPI_ICONS[i % KPI_ICONS.length] };
+    });
+
+    const extras: { label: string; value: string; change: number; Icon: typeof DollarSign }[] = [
+      { label: t("analytics.cacPayback"), value: `${unitEcon.paybackMonths}mo`, change: 12, Icon: Clock },
+      { label: t("analytics.npsScore"), value: `${unitEcon.nps}`, change: -unitEcon.churnRate, Icon: Repeat },
+      { label: t("analytics.avgOrderValue"), value: `$${unitEcon.aov}`, change: 8, Icon: ShoppingCart },
+      { label: t("analytics.arpu"), value: `$${unitEcon.arpu}`, change: 15, Icon: DollarSign },
+      { label: t("analytics.conversionRate"), value: `${unitEcon.conversionRate}%`, change: 0.8, Icon: PieChart },
+      { label: t("analytics.monthlyRevenue"), value: `$${(unitEcon.mrr / 1000).toFixed(0)}k`, change: 22, Icon: Zap },
+      { label: t("analytics.grossMargin"), value: `${unitEcon.grossMargin}%`, change: 3, Icon: TrendingUp },
+      { label: t("analytics.ltvCac"), value: `${(unitEcon.ltv / unitEcon.cac).toFixed(1)}x`, change: 11, Icon: Target },
+    ];
+
+    // Fill to exactly 10 items
+    const all = [...fromCharts, ...extras];
+    return all.slice(0, 10);
+  }, [content.charts, unitEcon, t]);
+
+  const funnelData = useMemo(
+    () => deriveFunnelData(content.charts).map((d) => ({ stage: t(d.stageKey), value: d.value, pct: d.pct })),
+    [content.charts, t],
+  );
+  const cohortData = useMemo(
+    () => deriveCohortData().map((d) => ({ name: `${t("analytics.week")} ${d.week}`, retention: d.retention, revenue: d.revenue })),
+    [t],
+  );
+  const rankings = useMemo(() => deriveRankings(content.charts), [content.charts]);
 
   return (
-    <div className="h-full overflow-y-auto p-4">
-      {/* Charts */}
-      <div className="mb-4 grid gap-4 lg:grid-cols-2">
+    <div className="h-full overflow-y-auto p-3 sm:p-4">
+      {/* Header */}
+      <div className="mb-4 flex items-center gap-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-100 dark:bg-emerald-900">
+          <BarChart3 className="h-5 w-5 text-emerald-600" />
+        </div>
+        <div>
+          <h2 className="text-lg font-bold">{t("analytics.title")}</h2>
+          <p className="text-sm text-muted-foreground">{t("analytics.subtitle")}</p>
+        </div>
+        <Badge className="ml-auto bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300">
+          <Zap className="mr-1 h-3 w-3" /> {t("analytics.live")}
+        </Badge>
+      </div>
+
+      {/* KPI Cards — always 10 items, 2 rows of 5 */}
+      <div className={cn(
+        "mb-4 grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 md:grid-cols-5 transition-all duration-500",
+        revealStage >= 1 ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
+      )}>
+        {kpis.map((kpi, i) => (
+          <Card key={i} className="transition-all duration-300" style={{ animationDelay: `${i * 80}ms` }}>
+            <CardContent className="p-2.5 sm:p-3">
+              <div className="flex items-center justify-between">
+                <kpi.Icon className="h-3.5 w-3.5 text-muted-foreground" />
+                <div className={cn(
+                  "flex items-center gap-0.5 text-[10px] font-medium",
+                  kpi.change >= 0 ? "text-emerald-600" : "text-red-500"
+                )}>
+                  {kpi.change >= 0 ? <TrendingUp className="h-2.5 w-2.5" /> : <TrendingDown className="h-2.5 w-2.5" />}
+                  {kpi.change >= 0 ? "+" : ""}{kpi.change}%
+                </div>
+              </div>
+              <p className="mt-1.5 text-xl font-bold">{kpi.value}</p>
+              <p className="truncate text-[10px] text-muted-foreground">{kpi.label}</p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Charts Grid */}
+      <div className={cn(
+        "mb-4 grid gap-3 lg:grid-cols-2 transition-all duration-500",
+        revealStage >= 2 ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
+      )}>
         {content.charts.map((chart, i) => (
           <Card key={i}>
-            <CardHeader className="pb-2">
+            <CardHeader className="pb-1">
               <CardTitle className="text-sm">{chart.label}</CardTitle>
             </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={140}>
+            <CardContent className="pb-3">
+              <ResponsiveContainer width="100%" height={160}>
                 {chart.type === "bar" ? (
                   <BarChart data={chart.data}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" strokeOpacity={0.3} />
                     <XAxis dataKey="name" tick={{ fontSize: 10 }} />
                     <YAxis tick={{ fontSize: 10 }} />
                     <Tooltip />
@@ -299,10 +218,11 @@ export default function AnalyticsPhase({ isPlaying, onComplete, content }: Props
                   </BarChart>
                 ) : (
                   <LineChart data={chart.data}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" strokeOpacity={0.3} />
                     <XAxis dataKey="name" tick={{ fontSize: 10 }} />
                     <YAxis tick={{ fontSize: 10 }} />
                     <Tooltip />
-                    <Line type="monotone" dataKey="value" stroke="#059669" strokeWidth={2} dot={false} />
+                    <Line type="monotone" dataKey="value" stroke="#059669" strokeWidth={2} dot={{ r: 3 }} />
                   </LineChart>
                 )}
               </ResponsiveContainer>
@@ -311,122 +231,176 @@ export default function AnalyticsPhase({ isPlaying, onComplete, content }: Props
         ))}
       </div>
 
-      {/* Live Agent Stage */}
-      <Card className="overflow-hidden border-slate-700 bg-slate-900">
-        {/* Stage Header */}
-        <div className="flex items-center justify-between border-b border-slate-700 px-5 py-3">
-          <div className="flex items-center gap-3">
-            <div className="relative flex h-6 w-6 items-center justify-center">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-30" />
-              <Radio className="relative h-4 w-4 text-emerald-400" />
+      {/* Unit Economics Section */}
+      <div className={cn(
+        "mb-4 transition-all duration-500",
+        revealStage >= 3 ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
+      )}>
+        <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold">
+          <DollarSign className="h-4 w-4 text-emerald-600" />
+          {t("analytics.unitEconomics")}
+        </h3>
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <Card className="border-emerald-200 dark:border-emerald-800">
+            <CardContent className="p-3">
+              <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">{t("analytics.cac")}</p>
+              <p className="mt-1 text-2xl font-bold text-emerald-600">${unitEcon.cac}</p>
+              <p className="text-[10px] text-muted-foreground">{t("analytics.costPerAcquisition")}</p>
+            </CardContent>
+          </Card>
+          <Card className="border-blue-200 dark:border-blue-800">
+            <CardContent className="p-3">
+              <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">{t("analytics.ltv")}</p>
+              <p className="mt-1 text-2xl font-bold text-blue-600">${unitEcon.ltv}</p>
+              <p className="text-[10px] text-muted-foreground">{t("analytics.lifetimeValue")}</p>
+            </CardContent>
+          </Card>
+          <Card className="border-violet-200 dark:border-violet-800">
+            <CardContent className="p-3">
+              <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">{t("analytics.ltvCac")}</p>
+              <p className="mt-1 text-2xl font-bold text-violet-600">{(unitEcon.ltv / unitEcon.cac).toFixed(1)}x</p>
+              <p className="text-[10px] text-muted-foreground">
+                {unitEcon.ltv / unitEcon.cac >= 3 ? t("analytics.healthy") : t("analytics.needsWork")}
+              </p>
+            </CardContent>
+          </Card>
+          <Card className="border-amber-200 dark:border-amber-800">
+            <CardContent className="p-3">
+              <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">{t("analytics.grossMargin")}</p>
+              <p className="mt-1 text-2xl font-bold text-amber-600">{unitEcon.grossMargin}%</p>
+              <p className="text-[10px] text-muted-foreground">{t("analytics.afterCogs")}</p>
+            </CardContent>
+          </Card>
+        </div>
+        <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <div className="flex items-center gap-2 rounded-lg border bg-muted/50 px-3 py-2">
+            <ShoppingCart className="h-3.5 w-3.5 text-muted-foreground" />
+            <div>
+              <p className="text-sm font-bold">${unitEcon.aov}</p>
+              <p className="text-[10px] text-muted-foreground">{t("analytics.avgOrderValue")}</p>
             </div>
-            <span className="text-base font-semibold text-slate-200">AI Agent Operations — Live</span>
-            <Badge className="bg-emerald-900 text-xs text-emerald-300">{content.agents.length} agents</Badge>
           </div>
-          <div className="flex items-center gap-5 text-sm text-slate-400">
-            <span className="flex items-center gap-1.5">
-              <span className="h-3 w-3 rounded-full bg-emerald-500" /> Working
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="h-3 w-3 rounded-full bg-blue-500" /> Syncing
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="h-3 w-3 rounded-full bg-amber-500" /> Review
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="h-3 w-3 rounded-full bg-slate-500" /> Idle
-            </span>
+          <div className="flex items-center gap-2 rounded-lg border bg-muted/50 px-3 py-2">
+            <Repeat className="h-3.5 w-3.5 text-muted-foreground" />
+            <div>
+              <p className="text-sm font-bold">{unitEcon.churnRate}%</p>
+              <p className="text-[10px] text-muted-foreground">{t("analytics.monthlyChurn")}</p>
+            </div>
           </div>
-        </div>
-
-        {/* Stage Canvas */}
-        <div className="relative flex justify-center px-2 py-2">
-          <svg viewBox={`0 0 ${stageW} ${stageH}`} className="h-auto w-full" style={{ maxHeight: "540px" }}>
-            <defs>
-              <pattern id="stage-grid" width="50" height="50" patternUnits="userSpaceOnUse">
-                <path d="M 50 0 L 0 0 0 50" fill="none" stroke="#1e293b" strokeWidth="0.5" />
-              </pattern>
-            </defs>
-            <rect width={stageW} height={stageH} fill="url(#stage-grid)" />
-
-            {/* Connection lines */}
-            {leadAgent && teamAgents.map((agent) => {
-              const from = positions[agent.name];
-              const to = positions[leadAgent.name];
-              if (!from || !to) return null;
-              const key = `${agent.name}-${leadAgent.name}`;
-              return (
-                <ConnectionLine
-                  key={key}
-                  x1={from.x} y1={from.y} x2={to.x} y2={to.y}
-                  active={activeConnections.includes(key)}
-                  color="#3b82f6"
-                />
-              );
-            })}
-
-            {/* Team agents */}
-            {teamAgents.map((agent) => {
-              const pos = positions[agent.name];
-              if (!pos) return null;
-              return (
-                <StageAgent
-                  key={agent.name} agent={agent}
-                  x={pos.x} y={pos.y} angle={pos.angle}
-                  status={agentStatuses[agent.name] || "idle"}
-                  isLead={false}
-                  speechBubble={speechBubbles[agent.name] || null}
-                />
-              );
-            })}
-
-            {/* Lead / Orchestrator */}
-            {leadAgent && positions[leadAgent.name] && (
-              <StageAgent
-                agent={leadAgent}
-                x={positions[leadAgent.name].x} y={positions[leadAgent.name].y} angle={0}
-                status={agentStatuses[leadAgent.name] || "working"}
-                isLead={true}
-                speechBubble={speechBubbles[leadAgent.name] || null}
-              />
-            )}
-          </svg>
-        </div>
-
-        {/* Mission Bar */}
-        <div className="flex items-center justify-between border-t border-slate-700 px-5 py-3">
-          <div className="flex items-center gap-3">
-            <Activity className="h-5 w-5 text-slate-400" />
-            <span className="text-sm text-slate-400">Current task:</span>
-            <span className="text-sm font-medium text-slate-200">{missions[missionIndex]}</span>
+          <div className="flex items-center gap-2 rounded-lg border bg-muted/50 px-3 py-2">
+            <Users className="h-3.5 w-3.5 text-muted-foreground" />
+            <div>
+              <p className="text-sm font-bold">${unitEcon.arpu}</p>
+              <p className="text-[10px] text-muted-foreground">{t("analytics.arpu")}</p>
+            </div>
           </div>
-          <div className="flex items-center gap-2 text-sm text-slate-500">
-            <MessageSquare className="h-4 w-4" />
-            <span>{activeConnections.length} active sync{activeConnections.length !== 1 ? "s" : ""}</span>
+          <div className="flex items-center gap-2 rounded-lg border bg-muted/50 px-3 py-2">
+            <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+            <div>
+              <p className="text-sm font-bold">{unitEcon.paybackMonths}mo</p>
+              <p className="text-[10px] text-muted-foreground">{t("analytics.paybackPeriod")}</p>
+            </div>
           </div>
         </div>
-      </Card>
+      </div>
 
-      {/* Human review points */}
-      {content.humanReviewPoints.length > 0 && (
-        <div className="mt-4 space-y-2">
-          <h4 className="flex items-center gap-2 text-sm font-medium">
-            <AlertTriangle className="h-4 w-4 text-amber-500" />
-            Human Review Required
-          </h4>
-          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-            {content.humanReviewPoints.map((rp, i) => (
-              <div key={i} className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 dark:border-amber-800 dark:bg-amber-950">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">{rp.task}</span>
-                  <Badge variant="outline" className="text-[10px]">{rp.agent}</Badge>
+      {/* Funnel + Cohort Retention side by side */}
+      <div className={cn(
+        "mb-4 grid gap-3 lg:grid-cols-2 transition-all duration-500",
+        revealStage >= 4 ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
+      )}>
+        {/* Conversion Funnel */}
+        <Card>
+          <CardHeader className="pb-1">
+            <CardTitle className="flex items-center gap-2 text-sm">
+              <PieChart className="h-3.5 w-3.5" /> {t("analytics.conversionFunnel")}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pb-3">
+            <ResponsiveContainer width="100%" height={160}>
+              <BarChart data={funnelData} layout="vertical" barCategoryGap="20%">
+                <XAxis type="number" hide />
+                <YAxis type="category" dataKey="stage" tick={{ fontSize: 10 }} width={65} />
+                <Tooltip formatter={(v) => typeof v === "number" ? v.toLocaleString() : v} />
+                <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+                  {funnelData.map((_, i) => (
+                    <Cell key={i} fill={FUNNEL_COLORS[i]} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+            <div className="mt-1 flex justify-between text-[10px] text-muted-foreground">
+              {funnelData.map((f) => (
+                <span key={f.stage}>{f.pct}%</span>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Cohort Retention */}
+        <Card>
+          <CardHeader className="pb-1">
+            <CardTitle className="flex items-center gap-2 text-sm">
+              <Repeat className="h-3.5 w-3.5" /> {t("analytics.cohortRetention")}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pb-3">
+            <ResponsiveContainer width="100%" height={160}>
+              <AreaChart data={cohortData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" strokeOpacity={0.3} />
+                <XAxis dataKey="name" tick={{ fontSize: 9 }} />
+                <YAxis tick={{ fontSize: 10 }} domain={[0, 100]} />
+                <Tooltip />
+                <Area type="monotone" dataKey="retention" stroke="#059669" fill="#059669" fillOpacity={0.15} strokeWidth={2} />
+                <Area type="monotone" dataKey="revenue" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.1} strokeWidth={1.5} strokeDasharray="4 2" />
+              </AreaChart>
+            </ResponsiveContainer>
+            <div className="mt-1 flex items-center justify-center gap-4 text-[10px] text-muted-foreground">
+              <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-emerald-500" /> {t("analytics.userRetention")}</span>
+              <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-blue-500" /> {t("analytics.revenueRetention")}</span>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Rankings Table */}
+      <div className={cn(
+        "transition-all duration-500",
+        revealStage >= 5 ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
+      )}>
+        <Card>
+          <CardHeader className="pb-1">
+            <CardTitle className="flex items-center gap-2 text-sm">
+              <Target className="h-3.5 w-3.5" /> {t("analytics.topPerformers")}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pb-3">
+            <div className="space-y-1.5">
+              {rankings.map((item, i) => (
+                <div key={i} className="flex items-center gap-3 rounded-lg px-2 py-1.5 text-sm transition-colors hover:bg-muted/50">
+                  <span className={cn(
+                    "flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold",
+                    i === 0 ? "bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300" :
+                    i === 1 ? "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300" :
+                    "bg-muted text-muted-foreground"
+                  )}>
+                    {i + 1}
+                  </span>
+                  <span className="flex-1 truncate font-medium">{item.name}</span>
+                  <span className="font-mono text-sm font-bold">{item.value.toLocaleString()}</span>
+                  <span className={cn(
+                    "flex items-center gap-0.5 text-[10px] font-medium",
+                    item.change >= 0 ? "text-emerald-600" : "text-red-500"
+                  )}>
+                    <ArrowUpRight className={cn("h-2.5 w-2.5", item.change < 0 && "rotate-90")} />
+                    {item.change >= 0 ? "+" : ""}{item.change}%
+                  </span>
                 </div>
-                <p className="mt-0.5 text-xs text-muted-foreground">{rp.reason}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

@@ -1,6 +1,8 @@
 /* All navigation on this page uses plain <a> tags instead of next/link
    because the root layout wraps with ClerkProvider which may not hydrate
    correctly when Clerk env vars are missing in dev. Plain anchors always work. */
+"use client";
+
 import {
   Brain,
   Database,
@@ -11,11 +13,12 @@ import {
   ArrowRight,
   ChevronLeft,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { PLANS, formatLimit, isUnlimited } from "@/lib/billing/plans";
 import type { Plan } from "@/lib/billing/plans";
+import type { TranslationKeys } from "@/lib/demo/i18n/types";
 import { MobileNav } from "./_components/mobile-nav";
+import { useI18n } from "@/lib/demo/i18n/context";
+import { LanguageToggle } from "./_components/language-toggle";
 
 const COURSES_URL =
   process.env.NEXT_PUBLIC_COURSES_URL || "https://courses.alltherest.world";
@@ -23,52 +26,17 @@ const COURSES_URL =
 const LANDING_URL =
   process.env.NEXT_PUBLIC_LANDING_URL || "https://www.alltherest.world";
 
-const FEATURES = [
-  {
-    icon: Brain,
-    title: "Multi-Model Intelligence",
-    description:
-      "Routes to Claude, GPT, or Gemini based on task complexity. Always the right model for the job.",
-  },
-  {
-    icon: Database,
-    title: "Persistent Knowledge Base",
-    description:
-      "Remembers your business context, products, customers, and processes across every conversation.",
-  },
-  {
-    icon: Mic,
-    title: "Voice-First Operations",
-    description:
-      "Brief Resto by voice for daily standups, task delegation, and status checks. Your morning co-founder call.",
-  },
-  {
-    icon: Plug,
-    title: "Deep Integrations",
-    description:
-      "Connects to Stripe, GitHub, HubSpot, Vercel, Notion, and more. Reads data, takes action, monitors results.",
-  },
+const FEATURES: { icon: typeof Brain; titleKey: keyof TranslationKeys; descKey: keyof TranslationKeys }[] = [
+  { icon: Brain, titleKey: "features.multiModel", descKey: "features.multiModelDesc" },
+  { icon: Database, titleKey: "features.knowledgeBase", descKey: "features.knowledgeBaseDesc" },
+  { icon: Mic, titleKey: "features.voiceFirst", descKey: "features.voiceFirstDesc" },
+  { icon: Plug, titleKey: "features.integrations", descKey: "features.integrationsDesc" },
 ];
 
-const STEPS = [
-  {
-    step: "1",
-    title: "Brief Resto",
-    description:
-      "Tell it about your business, products, and goals. It builds a persistent knowledge base from day one.",
-  },
-  {
-    step: "2",
-    title: "It Executes",
-    description:
-      "Resto takes action across your tools and integrations — drafting, analyzing, monitoring, and reporting.",
-  },
-  {
-    step: "3",
-    title: "You Scale",
-    description:
-      "Focus on strategy while Resto handles operations. It gets smarter with every interaction.",
-  },
+const STEPS: { step: string; titleKey: keyof TranslationKeys; descKey: keyof TranslationKeys }[] = [
+  { step: "1", titleKey: "howItWorks.step1Title", descKey: "howItWorks.step1Desc" },
+  { step: "2", titleKey: "howItWorks.step2Title", descKey: "howItWorks.step2Desc" },
+  { step: "3", titleKey: "howItWorks.step3Title", descKey: "howItWorks.step3Desc" },
 ];
 
 const INTEGRATIONS = [
@@ -82,7 +50,7 @@ const INTEGRATIONS = [
   "Notion",
 ];
 
-function PlanCard({ plan, popular }: { plan: Plan; popular?: boolean }) {
+function PlanCard({ plan, popular, t }: { plan: Plan; popular?: boolean; t: (key: keyof TranslationKeys, vars?: Record<string, string | number>) => string }) {
   return (
     <div
       className={`relative flex flex-col rounded-2xl border p-8 ${
@@ -93,7 +61,7 @@ function PlanCard({ plan, popular }: { plan: Plan; popular?: boolean }) {
     >
       {popular && (
         <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-emerald-600 px-4 py-1 text-xs font-semibold text-white">
-          Most Popular
+          {t("pricing.mostPopular")}
         </span>
       )}
 
@@ -101,11 +69,11 @@ function PlanCard({ plan, popular }: { plan: Plan; popular?: boolean }) {
         <h3 className="text-lg font-semibold">{plan.name}</h3>
         <div className="mt-2">
           {plan.priceMonthly === 0 ? (
-            <span className="text-4xl font-bold">Free</span>
+            <span className="text-4xl font-bold">{t("pricing.free")}</span>
           ) : (
             <>
               <span className="text-4xl font-bold">${plan.priceMonthly}</span>
-              <span className="text-muted-foreground">/month</span>
+              <span className="text-muted-foreground">{t("pricing.perMonth")}</span>
             </>
           )}
         </div>
@@ -118,16 +86,16 @@ function PlanCard({ plan, popular }: { plan: Plan; popular?: boolean }) {
           {isUnlimited(plan.limits.projects)
             ? ""
             : plan.limits.projects === 1
-              ? "project"
-              : "projects"}
+              ? t("pricing.project")
+              : t("pricing.projects")}
         </li>
         <li className="flex items-center gap-2.5">
           <Check className="h-4 w-4 shrink-0 text-emerald-600" />
-          {formatLimit(plan.limits.tokensPerMonth, "tokens")} tokens/month
+          {formatLimit(plan.limits.tokensPerMonth, "tokens")} {t("pricing.tokensMonth")}
         </li>
         <li className="flex items-center gap-2.5">
           <Check className="h-4 w-4 shrink-0 text-emerald-600" />
-          {formatLimit(plan.limits.kbStorageMb, "MB")} knowledge base
+          {formatLimit(plan.limits.kbStorageMb, "MB")} {t("pricing.knowledgeBase")}
         </li>
         <li className="flex items-center gap-2.5">
           {plan.limits.agentActions ? (
@@ -138,13 +106,13 @@ function PlanCard({ plan, popular }: { plan: Plan; popular?: boolean }) {
           <span
             className={plan.limits.agentActions ? "" : "text-muted-foreground"}
           >
-            Agent actions & code generation
+            {t("pricing.agentActions")}
           </span>
         </li>
         {plan.id === "scale" && (
           <li className="flex items-center gap-2.5">
             <Check className="h-4 w-4 shrink-0 text-emerald-600" />
-            Priority support
+            {t("pricing.prioritySupport")}
           </li>
         )}
       </ul>
@@ -157,13 +125,14 @@ function PlanCard({ plan, popular }: { plan: Plan; popular?: boolean }) {
             : "border border-border bg-background hover:bg-accent"
         }`}
       >
-        {plan.priceMonthly === 0 ? "Get Started Free" : `Start ${plan.name}`}
+        {plan.priceMonthly === 0 ? t("pricing.getStartedFree") : t("pricing.startPlan", { name: plan.name })}
       </a>
     </div>
   );
 }
 
 export default function Home() {
+  const { t } = useI18n();
   const plans = Object.values(PLANS);
 
   return (
@@ -190,19 +159,19 @@ export default function Home() {
               href="#features"
               className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
             >
-              Features
+              {t("nav.features")}
             </a>
             <a
               href="/use-cases"
               className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
             >
-              Use Cases
+              {t("nav.useCases")}
             </a>
             <a
               href="#pricing"
               className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
             >
-              Pricing
+              {t("nav.pricing")}
             </a>
             <a
               href={COURSES_URL}
@@ -210,13 +179,14 @@ export default function Home() {
               rel="noopener noreferrer"
               className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
             >
-              Courses
+              {t("nav.courses")}
             </a>
+            <LanguageToggle />
             <a
               href="/sign-up"
               className="inline-flex h-9 items-center justify-center rounded-lg bg-emerald-600 px-5 text-sm font-medium text-white transition-colors hover:bg-emerald-700"
             >
-              Get Started
+              {t("nav.getStarted")}
             </a>
           </nav>
 
@@ -229,33 +199,31 @@ export default function Home() {
         <section className="flex min-h-[80vh] flex-col items-center justify-center px-6 py-24 text-center">
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-1.5 dark:border-emerald-800 dark:bg-emerald-950/50">
             <span className="text-sm font-medium text-emerald-700 dark:text-emerald-400">
-              Your AI Co-Founder
+              {t("hero.badge")}
             </span>
           </div>
           <h1 className="mx-auto max-w-3xl text-4xl font-bold tracking-tight md:text-6xl">
-            Brief it once. It{" "}
+            {t("hero.title1")}
             <span className="bg-gradient-to-r from-emerald-600 to-blue-600 bg-clip-text text-transparent">
-              remembers, acts, and scales.
+              {t("hero.title2")}
             </span>
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground">
-            Resto is an AI agent with persistent memory, multi-model
-            intelligence, and deep tool integrations. It executes real business
-            tasks so you can focus on what matters.
+            {t("hero.subtitle")}
           </p>
           <div className="mt-10 flex flex-col gap-4 sm:flex-row">
             <a
               href="/sign-up"
               className="inline-flex h-12 items-center justify-center gap-2 rounded-lg bg-emerald-600 px-8 text-base font-medium text-white shadow-md transition-colors hover:bg-emerald-700"
             >
-              Get Started Free
+              {t("hero.cta")}
               <ArrowRight className="size-4" />
             </a>
             <a
               href="#pricing"
               className="inline-flex h-12 items-center justify-center gap-2 rounded-lg border border-blue-600 px-8 text-base font-medium text-blue-600 transition-colors hover:bg-blue-50 dark:hover:bg-blue-950/50"
             >
-              See Pricing
+              {t("hero.seePricing")}
             </a>
           </div>
         </section>
@@ -265,27 +233,26 @@ export default function Home() {
           <div className="mx-auto max-w-6xl">
             <div className="text-center">
               <h2 className="text-3xl font-bold tracking-tight md:text-4xl">
-                Everything you need to{" "}
-                <span className="text-emerald-600">run your business with AI</span>
+                {t("features.title1")}
+                <span className="text-emerald-600">{t("features.title2")}</span>
               </h2>
               <p className="mx-auto mt-4 max-w-2xl text-muted-foreground">
-                Resto combines multi-model intelligence, persistent memory, and
-                tool integrations into one AI agent that actually gets work done.
+                {t("features.subtitle")}
               </p>
             </div>
 
             <div className="mt-16 grid gap-6 md:grid-cols-2">
               {FEATURES.map((feature) => (
                 <div
-                  key={feature.title}
+                  key={feature.titleKey}
                   className="rounded-2xl border border-border bg-card p-6 transition-all hover:shadow-lg"
                 >
                   <div className="mb-4 flex size-10 items-center justify-center rounded-xl bg-emerald-100 dark:bg-emerald-900/30">
                     <feature.icon className="size-5 text-emerald-600" />
                   </div>
-                  <h3 className="text-lg font-semibold">{feature.title}</h3>
+                  <h3 className="text-lg font-semibold">{t(feature.titleKey)}</h3>
                   <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                    {feature.description}
+                    {t(feature.descKey)}
                   </p>
                 </div>
               ))}
@@ -298,11 +265,10 @@ export default function Home() {
           <div className="mx-auto max-w-6xl">
             <div className="text-center">
               <h2 className="text-3xl font-bold tracking-tight md:text-4xl">
-                How it works
+                {t("howItWorks.title")}
               </h2>
               <p className="mx-auto mt-4 max-w-2xl text-muted-foreground">
-                Get started in minutes. Resto learns your business and starts
-                delivering value from day one.
+                {t("howItWorks.subtitle")}
               </p>
             </div>
 
@@ -312,9 +278,9 @@ export default function Home() {
                   <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-full bg-gradient-to-br from-emerald-600 to-blue-600 text-lg font-bold text-white">
                     {step.step}
                   </div>
-                  <h3 className="text-lg font-semibold">{step.title}</h3>
+                  <h3 className="text-lg font-semibold">{t(step.titleKey)}</h3>
                   <p className="mt-2 text-sm text-muted-foreground">
-                    {step.description}
+                    {t(step.descKey)}
                   </p>
                 </div>
               ))}
@@ -326,7 +292,7 @@ export default function Home() {
         <section className="border-t border-border bg-muted/30 px-6 py-16">
           <div className="mx-auto max-w-6xl text-center">
             <p className="text-sm font-medium text-muted-foreground">
-              Works with the tools you already use
+              {t("integrationsSection.title")}
             </p>
             <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
               {INTEGRATIONS.map((name) => (
@@ -349,10 +315,10 @@ export default function Home() {
           <div className="mx-auto max-w-5xl">
             <div className="mb-12 text-center">
               <h2 className="text-3xl font-bold tracking-tight md:text-4xl">
-                Simple, transparent pricing
+                {t("pricing.title")}
               </h2>
               <p className="mx-auto mt-4 max-w-xl text-muted-foreground">
-                Start free. Scale when you&apos;re ready. No hidden fees.
+                {t("pricing.subtitle")}
               </p>
             </div>
 
@@ -362,13 +328,13 @@ export default function Home() {
                   key={plan.id}
                   plan={plan}
                   popular={plan.id === "pro"}
+                  t={t}
                 />
               ))}
             </div>
 
             <p className="mt-8 text-center text-sm text-muted-foreground">
-              All plans include multi-model AI routing, persistent memory, and
-              voice interaction. Courses are priced separately.
+              {t("pricing.footer")}
             </p>
           </div>
         </section>
@@ -377,18 +343,17 @@ export default function Home() {
         <section className="border-t border-border bg-gradient-to-br from-emerald-600 to-blue-600 px-6 py-24 text-white">
           <div className="mx-auto max-w-3xl text-center">
             <h2 className="text-3xl font-bold tracking-tight md:text-4xl">
-              Ready to build with your AI co-founder?
+              {t("cta.title")}
             </h2>
             <p className="mx-auto mt-4 max-w-xl text-white/80">
-              Join builders worldwide who use Resto to start, operate, and scale
-              their businesses with AI.
+              {t("cta.subtitle")}
             </p>
             <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
               <a
                 href="/sign-up"
                 className="inline-flex h-12 items-center justify-center gap-2 rounded-lg bg-white px-8 text-base font-medium text-emerald-700 shadow-md transition-colors hover:bg-gray-100"
               >
-                Get Started Free
+                {t("cta.getStarted")}
                 <ArrowRight className="size-4" />
               </a>
               <a
@@ -397,7 +362,7 @@ export default function Home() {
                 rel="noopener noreferrer"
                 className="inline-flex h-12 items-center justify-center gap-2 rounded-lg border border-white/30 px-8 text-base font-medium text-white transition-colors hover:bg-white/10"
               >
-                Explore Courses
+                {t("cta.exploreCourses")}
               </a>
             </div>
           </div>
@@ -408,20 +373,20 @@ export default function Home() {
       <footer className="border-t border-border py-8">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-6 sm:flex-row">
           <p className="text-sm text-muted-foreground">
-            &copy; {new Date().getFullYear()} ATR - All The Rest
+            {t("footer.copyright", { year: String(new Date().getFullYear()) })}
           </p>
           <nav className="flex items-center gap-6 text-sm text-muted-foreground">
             <a
               href={LANDING_URL}
               className="transition-colors hover:text-foreground"
             >
-              ATR Home
+              {t("footer.atrHome")}
             </a>
             <a
               href="/pricing"
               className="transition-colors hover:text-foreground"
             >
-              Pricing
+              {t("nav.pricing")}
             </a>
             <a
               href={COURSES_URL}
@@ -429,7 +394,7 @@ export default function Home() {
               rel="noopener noreferrer"
               className="transition-colors hover:text-foreground"
             >
-              Courses
+              {t("nav.courses")}
             </a>
           </nav>
         </div>
